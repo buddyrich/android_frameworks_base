@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Motorola Mobility changes by Hashcode [11-17-2011]
+ *
+ */
 
 package com.android.internal.telephony;
 
@@ -147,4 +151,11 @@ public interface TelephonyProperties
      * when there is a radio technology change.
      */
     static final String PROPERTY_RESET_ON_RADIO_TECH_CHANGE = "persist.radio.reset_on_switch";
+
+    /* MOTOROLA CODE: BEGIN */
+    public static final String PROPERTY_EMAIL_GW_ADDR = "gsm.sim.email.gateway";
+    public static final String PROPERTY_GSM_RECEIVED_ECB_MSG = "ril.gsm.rcv_ecb_msg";
+    public static final String PROPERTY_IN_EMERGENCY_CALL = "ril.cdma.inemergencycall";
+    /* MOTOROLA CODE: END */
+
 }

@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Motorola Mobility changes by Hashcode [11-17-2011]
+ *
+ */
 
 package com.android.internal.telephony;
 
@@ -32,6 +36,12 @@ import com.android.internal.telephony.gsm.GsmDataConnection;
 import com.android.internal.telephony.test.SimulatedRadioControl;
 
 import java.util.List;
+
+/* MOTOROLA CODE: BEGIN */
+import android.net.Uri;
+import com.android.internal.telephony.gsm.SmsBroadcastConfigInfo;
+import com.android.internal.telephony.motorola.MCCEntry;
+/* MOTOROLA CODE: END */
 
 /**
  * Internal interface used to control the phone; SDK developers cannot
@@ -126,12 +136,26 @@ public interface Phone {
     static final String APN_TYPE_DUN = "dun";
     /** APN type for HiPri traffic */
     static final String APN_TYPE_HIPRI = "hipri";
+    /* MOTOROLA CODE: BEGIN */
+    static final String APN_TYPE_AGPS = "agps";
+    static final String APN_TYPE_CBS = "cbs";
+    static final String APN_TYPE_ENTITLE = "entitle";
+    static final String APN_TYPE_FOTA = "fota";
+    static final String APN_TYPE_IMS = "ims";
+    /* MOTOROLA CODE: END */
 
     // "Features" accessible through the connectivity manager
     static final String FEATURE_ENABLE_MMS = "enableMMS";
     static final String FEATURE_ENABLE_SUPL = "enableSUPL";
     static final String FEATURE_ENABLE_DUN = "enableDUN";
     static final String FEATURE_ENABLE_HIPRI = "enableHIPRI";
+    /* MOTOROLA CODE: BEGIN */
+    static final String FEATURE_ENABLE_AGPS = "enableAGPS";
+    static final String FEATURE_ENABLE_CBS = "enableCBS";
+    static final String FEATURE_ENABLE_ENTITLE = "enableENTITLE";
+    static final String FEATURE_ENABLE_FOTA = "enableFOTA";
+    static final String FEATURE_ENABLE_IMS = "enableIMS";
+    /* MOTOROLA CODE: END */
 
     /**
      * Return codes for <code>enableApnType()</code>
@@ -140,6 +164,9 @@ public interface Phone {
     static final int APN_REQUEST_STARTED    = 1;
     static final int APN_TYPE_NOT_AVAILABLE = 2;
     static final int APN_REQUEST_FAILED     = 3;
+    /* MOTOROLA CODE: BEGIN */
+    static final int APN_ALREADY_INACTIVE   = 4;
+    /* MOTOROLA CODE: END */
 
 
     /**
@@ -164,6 +191,14 @@ public interface Phone {
     static final String REASON_PS_RESTRICT_ENABLED = "psRestrictEnabled";
     static final String REASON_PS_RESTRICT_DISABLED = "psRestrictDisabled";
     static final String REASON_SIM_LOADED = "simLoaded";
+    /* MOTOROLA CODE: BEGIN */
+    static final String REASON_DUN_DISABLED = "dunDisabled";
+    static final String REASON_DUN_ENABLED = "dunEnabled";
+    static final String REASON_FAIL_IPV6ADDR = "no IPv6 address";
+    static final String REASON_HANDOVER_OCCURRED = "handoverOccurred";
+    static final String REASON_IMSPDN_NW_INITIATED = "imsPdnNwInitiated";
+    static final String REASON_NW_TYPE_CHANGED = "nwTypeChanged";
+    /* MOTOROLA CODE: END */
 
     // Used for band mode selection methods
     static final int BM_UNSPECIFIED = 0; // selected by baseband automatically
@@ -192,6 +227,9 @@ public interface Phone {
     int NT_MODE_CDMA_NO_EVDO = RILConstants.NETWORK_MODE_CDMA_NO_EVDO;
     int NT_MODE_EVDO_NO_CDMA = RILConstants.NETWORK_MODE_EVDO_NO_CDMA;
     int NT_MODE_GLOBAL       = RILConstants.NETWORK_MODE_GLOBAL;
+    /* MOTOROLA CODE: BEGIN */
+    int NT_MODE_LTE_ONLY     = RILConstants.NETWORK_MODE_LTE_ONLY;
+    /* MOTOROLA CODE: END */
 
     int PREFERRED_NT_MODE    = RILConstants.PREFERRED_NETWORK_MODE;
 
@@ -200,6 +238,10 @@ public interface Phone {
     static final int CDMA_RM_HOME        = 0;  // Home Networks only, as defined in PRL
     static final int CDMA_RM_AFFILIATED  = 1;  // Roaming an Affiliated networks, as defined in PRL
     static final int CDMA_RM_ANY         = 2;  // Roaming on Any Network, as defined in PRL
+    /* MOTOROLA CODE: BEGIN */
+    static final int CDMA_RM_ANY_BAND_A  = 3;
+    static final int CDMA_RM_ANY_BAND_B  = 4;
+    /* MOTOROLA CODE: END */
 
     // Used for CDMA subscription mode
     static final int CDMA_SUBSCRIPTION_RUIM_SIM = 0; // RUIM/SIM (default)
@@ -228,6 +270,16 @@ public interface Phone {
     public static final int CDMA_OTA_PROVISION_STATUS_OTAPA_STARTED = 9;
     public static final int CDMA_OTA_PROVISION_STATUS_OTAPA_STOPPED = 10;
     public static final int CDMA_OTA_PROVISION_STATUS_OTAPA_ABORTED = 11;
+
+    /* MOTOROLA CODE: BEGIN */
+    public static final String DATA_IP_VERSION_TYPE = "ipVersion";
+    public static final String DATA_IP_ADDR_1_KEY = "ipaddr1";
+    public static final String DATA_IP_ADDR_2_KEY = "ipaddr2";
+    public static final String DATA_PDP_CID_KEY = "cid";
+    public static final int IP_TYPE_V4 = 0;
+    public static final int IP_TYPE_V6 = 1;
+    public static final int IP_TYPE_V6V4 = 2;
+    /* MOTOROLA CODE: BEGIN */
 
 
     /**
@@ -1728,4 +1780,48 @@ public interface Phone {
      * false otherwise
      */
     boolean isCspPlmnEnabled();
+
+
+    /* MOTOROLA CODE: BEGIN */
+    public abstract void addUnknownCountry(MCCEntry mccentry);
+    public abstract boolean changeBarringPassword(String s, String s1, String s2, Message message);
+    public abstract String getActiveApn(String s);
+    public abstract MCCEntry[] getAllCountryList();
+    public abstract Uri getCdmaEriAlertUri();
+    public abstract int getCdmaEriFileVersion();
+    public abstract void getCellsInfo(Message message);
+    public abstract int getCid(String s);
+    public abstract CommandsInterface getCommandsInterface();
+    public abstract MCCEntry getEntryByMCC(int i);
+    public abstract String[] getGateways(String s);
+    public abstract void getGsmBroadcastConfig(Message message);
+    public abstract String getGsmImei();
+    public abstract String getGsmImeiSv();
+    public abstract int[] getHomeSystemId();
+    public abstract IccFileHandler getIccFileHandler();
+    public abstract String getImsi_m();
+    public abstract void getIncomingCallerIdDisplay(Message message);
+    public abstract String[] getIpAddresses(String s);
+    public abstract int getIpVersion(String s);
+    public abstract boolean getReadPlmnModeFlag();
+    public abstract int getVoicemailPriority();
+    public abstract boolean isCtryNameExist(String s);
+    public abstract boolean isCurrentMccUnknown();
+    public abstract boolean isUnknownCountryExist();
+    public abstract boolean queryFacilityLock(String facility, String password, int serviceClass, Message message) {
+    public abstract void registerForSuppServiceCompleted(Handler handler, int i, Object obj);
+    public abstract void unregisterForSuppServiceCompleted(Handler handler);
+    public abstract void registerForUnknownMcc(Handler handler, int i, Object obj);
+    public abstract void unregisterForUnknownMcc(Handler handler);
+    public abstract void registerRilError(Handler handler, int i, Object obj);
+    public abstract void unRegisterRilError(Handler handler);
+    public abstract void removeUnknownCountry();
+    public abstract boolean setFacilityLock(String s, boolean flag, String s1, int i, Message message);
+    public abstract void setGsmBroadcastConfig(SmsBroadcastConfigInfo asmsbroadcastconfiginfo[], Message message);
+    public abstract void setGsmBroadcastActivation(boolean flag, Message message);
+    public abstract void startNetworkQuery(Message message);
+    public abstract void stopNetworkQuery();
+    public abstract boolean toAttmptNBPCD();
+    /* MOTOROLA CODE: END */
 }
+

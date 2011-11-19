@@ -101,10 +101,18 @@ public abstract class DataConnectionTracker extends Handler {
     protected static final int EVENT_RESTART_RADIO = 36;
     protected static final int EVENT_SET_MASTER_DATA_ENABLE = 37;
     protected static final int EVENT_RESET_DONE = 38;
+    /* MOTOROLA CODE: BEGIN */
+    protected static final int EVENT_DELAYED_VOICE_CALL_START = 39;
+    protected static final int EVENT_POLL_DATA_CALLS_STATE = 40;
+    public static final int EVENT_4G_TECHNOLOGY_CHANGE = 41;
+    protected static final int EVENT_POLL_EXTRA_DATA_REASON = 42;
+    protected static final int EVENT_ICC_CHANGED = 43;
+    /* MOTOROLA CODE: END */
 
     /***** Constants *****/
 
-    protected static final int APN_INVALID_ID = -1;
+    protected static final int APN_INVALID_ID = 255;
+    //protected static final int APN_INVALID_ID = -1;
     protected static final int APN_DEFAULT_ID = 0;
     protected static final int APN_MMS_ID = 1;
     protected static final int APN_SUPL_ID = 2;

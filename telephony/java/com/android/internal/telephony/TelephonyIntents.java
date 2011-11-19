@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Motorola Mobility changes by Hashcode [11-17-2011]
+ *
+ */
 
 package com.android.internal.telephony;
 
@@ -236,4 +240,16 @@ public class TelephonyIntents {
      */
     public static final String ACTION_SHOW_NOTICE_ECM_BLOCK_OTHERS
             = "android.intent.action.ACTION_SHOW_NOTICE_ECM_BLOCK_OTHERS";
+
+
+    /* MOTOROLA CODE: BEGIN */
+    public static final String ACTION_CDMA_OTA_MDN_CHANGED = "android.intent.action.ACTION_MDN_STATE_CHANGED";
+    public static final String ACTION_CELLBROADCAST_SETUP = "android.intent.action.ACTION_CELLBROADCAST_SETUP";
+    public static final String ACTION_CELLBROADCAST_STATUS_BAR_ENABLED = "android.intent.action.ACTION_CELLBROADCAST_STATUS_BAR_ENABLED";
+    public static final String ACTION_CHANGE_AIRPLANE_MODE_IN_ECM = "android.intent.action.ACTION_CHANGE_AIRPLANE_MODE_IN_ECM";
+    public static final String ACTION_CHANGE_DATA_SERVICE_SUPPORT = "android.intent.action.ACTION_CHANGE_DATA_SERVICE_SUPPORT";
+    public static final String ACTION_DISPLAY_ROAMING_DIALOG = "com.motorola.intent.action.DISPLAY_ROAMING_DIALOG";
+    public static final String ACTION_STATE_REJECT_CODE = "com.motorola.intent.action.GET_REJECT_CODE";
+    /* MOTOROLA CODE: END */
+
 }

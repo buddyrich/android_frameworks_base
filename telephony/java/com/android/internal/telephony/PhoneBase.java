@@ -13,6 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/*
+ * Motorola Mobility changes by Hashcode [11-17-2011]
+ *
+ */
 
 package com.android.internal.telephony;
 
@@ -37,6 +41,17 @@ import android.util.Log;
 import com.android.internal.R;
 import com.android.internal.telephony.gsm.GsmDataConnection;
 import com.android.internal.telephony.test.SimulatedRadioControl;
+
+/* MOTOROLA CODE: BEGIN */
+import com.android.internal.telephony.gsm.SmsBroadcastConfigInfo;
+import com.android.internal.telephony.test.SimulatedRadioControl;
+
+import android.net.Uri;
+import com.motorola.android.internal.telephony.ISIMFileHandler;
+import com.motorola.android.internal.telephony.ISIMInterfaceService;
+import com.motorola.android.provider.MotorolaSettings;
+import com.motorola.android.telephony.MCCEntry;
+/* MOTOROLA CODE: END */
 
 import java.util.List;
 import java.util.Locale;
@@ -99,6 +114,13 @@ public abstract class PhoneBase extends Handler implements Phone {
     protected static final int EVENT_SET_ENHANCED_VP                = 24;
     protected static final int EVENT_EMERGENCY_CALLBACK_MODE_ENTER  = 25;
     protected static final int EVENT_EXIT_EMERGENCY_CALLBACK_RESPONSE = 26;
+    /* MOTOROLA CODE: BEGIN */
+    // Motorola WorldPhone support
+    protected static final int EVENT_CSIM_RECORDS_LOADED = 27;
+    protected static final int EVENT_ICC_CHANGED         = 28;
+    protected static final int EVENT_ICC_RECORD_EVENTS   = 29;
+    protected static final int EVENT_RUIM_READY          = 30;
+    /* MOTOROLA CODE: END */
 
     // Key used to read/write current CLIR setting
     public static final String CLIR_KEY = "clir_key";
@@ -115,6 +137,12 @@ public abstract class PhoneBase extends Handler implements Phone {
     int mCallRingContinueToken = 0;
     int mCallRingDelay;
     public boolean mIsTheCurrentActivePhone = true;
+    /* MOTOROLA CODE: BEGIN */
+    boolean mDoesRingingComingfirst;
+    public ISIMFileHandler mIsimFileHandler;
+    public ISIMInterfaceService mIsimService;
+    protected int mModemId = -1;
+    /* MOTOROLA CODE: END */
 
     /**
      * Set a system property, unless we're in unit test mode
@@ -124,6 +152,11 @@ public abstract class PhoneBase extends Handler implements Phone {
         if(getUnitTestMode()) {
             return;
         }
+        /* MOTOROLA CODE: BEGIN */
+        if(property.equals(PROPERTY_ICC_OPERATOR_NUMERIC)) {
+            Log.v(LOG_TAG, "Sync method to set PROPERTY_ICC_OPERATOR_NUMBERIC");
+        }
+        /* MOTOROLA CODE: END */
         SystemProperties.set(property, value);
     }
 
@@ -154,6 +187,14 @@ public abstract class PhoneBase extends Handler implements Phone {
 
     protected final RegistrantList mSuppServiceFailedRegistrants
             = new RegistrantList();
+
+    /* MOTOROLA CODE: BEGIN */
+    protected final RegistrantList mRilErrorRegistrants
+            = new RegistrantList();
+
+    protected final RegistrantList mSuppServiceCompletedRegistrants
+            = new RegistrantList();
+    /* MOTOROLA CODE: END */
 
     protected Looper mLooper; /* to insure registrants are in correct thread*/
 
@@ -197,13 +238,55 @@ public abstract class PhoneBase extends Handler implements Phone {
         mLooper = Looper.myLooper();
         mCM = ci;
 
-        setPropertiesByCarrier();
+        /* MOTOROLA: BEGIN */
+        setUnitTestMode(unitTestMode);
+
+        initialize();
+        activateMe();
+        /* MOTOROLA: END */
+    }
+
+    /* MOTOROLA: BEGIN */
+    protected PhoneBase(int modemId, PhoneNotifier notifier, Context context, CommandsInterface ci,
+            boolean unitTestMode) {
+        this.mModemId = modemId;
+        this.mNotifier = notifier;
+        this.mContext = context;
+        mLooper = Looper.myLooper();
+        mCM = ci;
 
         setUnitTestMode(unitTestMode);
 
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-        mDnsCheckDisabled = sp.getBoolean(DNS_SERVER_CHECK_DISABLED_KEY, false);
+        initialize();
+    }
+
+    protected PhoneBase(boolean flag, PhoneNotifier phonenotifier, Context context, CommandsInterface commandsinterface,
+            boolean unitTestMode) {
+        if(!flag) {
+            Log.e(LOG_TAG, "PhoneBase, this shouldn't be called.");
+        } else {
+            this.mNotifier = notifier;
+            this.mContext = context;
+            mLooper = Looper.myLooper();
+            mCM = ci;
+
+            setUnitTestMode(unitTestMode);
+
+            initialize();
+        }
+    }
+
+    private void activateMe()
+    {
+        setPropertiesByCarrier();
         mCM.setOnCallRing(this, EVENT_CALL_RING, null);
+        mIsTheCurrentActivePhone = true;
+    }
+
+    private void initialize()
+    {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(mContext);
+        mDnsCheckDisabled = sp.getBoolean(DNS_SERVER_CHECK_DISABLED_KEY, false);
 
         /**
          *  Some RIL's don't always send RIL_UNSOL_CALL_RING so it needs
@@ -223,6 +306,7 @@ public abstract class PhoneBase extends Handler implements Phone {
                 TelephonyProperties.PROPERTY_CALL_RING_DELAY, 3000);
         Log.d(LOG_TAG, "mCallRingDelay=" + mCallRingDelay);
     }
+    /* MOTOROLA: END */
 
     public void dispose() {
         synchronized(PhoneProxy.lockForRadioTechnologyChange) {
@@ -647,7 +731,11 @@ public abstract class PhoneBase extends Handler implements Phone {
     /**
      * Retrieves the IccFileHandler of the Phone instance
      */
-    public abstract IccFileHandler getIccFileHandler();
+    /* MOTOROLA CODE: BEGIN */
+    public IccFileHandler getIccFileHandler() {
+        return mIccFileHandler;
+    }
+    /* MOTOROLA CODE: END */
 
     /*
      * Retrieves the Handler of the Phone instance
@@ -742,6 +830,12 @@ public abstract class PhoneBase extends Handler implements Phone {
     public void notifyDataConnection(String reason) {
         mNotifier.notifyDataConnection(this, reason);
     }
+
+    /* MOTOROLA CODE: BEGIN */
+    public void notifyDataConnection(String reason, String s1) {
+        mNotifier.notifyDataConnection(this, reason, s1);
+    }
+    /* MOTOROLA CODE: END */
 
     public abstract String getPhoneName();
 
@@ -926,6 +1020,13 @@ public abstract class PhoneBase extends Handler implements Phone {
         return mDataConnection.getIpAddress(apnType);
     }
 
+    /* MOTOROLA CODE: BEGIN */
+    public String[] getIpAddresses(String apnType)
+    {
+        return mDataConnection.getIpAddresses(apnType);
+    }
+    /* MOTOROLA CODE: END */
+
     public boolean isDataConnectivityEnabled() {
         return mDataConnection.getDataEnabled();
     }
@@ -933,6 +1034,12 @@ public abstract class PhoneBase extends Handler implements Phone {
     public String getGateway(String apnType) {
         return mDataConnection.getGateway(apnType);
     }
+
+    /* MOTOROLA CODE: BEGIN */
+    public String[] getGateways(String apnType) {
+        return mDataConnection.getGateways(apnType);
+    }
+    /* MOTOROLA CODE: END */
 
     public String[] getDnsServers(String apnType) {
         return mDataConnection.getDnsServers(apnType);
@@ -998,6 +1105,13 @@ public abstract class PhoneBase extends Handler implements Phone {
                     obtainMessage(EVENT_CALL_RING_CONTINUE, mCallRingContinueToken, 0), mCallRingDelay);
         }
         mNewRingingConnectionRegistrants.notifyRegistrants(ar);
+        /* MOTOROLA CODE: BEGIN */
+        if (mDoesRingingComingfirst) {
+            mCallRingContinueToken = mCallRingContinueToken + 1;
+            sendIncomingCallRingNotification(mCallRingContinueToken);
+            mDoesRingingComingfirst = false;
+        }
+        /* MOTOROLA CODE: END */
     }
 
     /**
@@ -1048,4 +1162,231 @@ public abstract class PhoneBase extends Handler implements Phone {
         Log.e(LOG_TAG, "Error! " + name + "() in PhoneBase should not be " +
                 "called, GSMPhone inactive.");
     }
+
+    /* MOTOROLA CODE: BEGIN */
+    private boolean checkFacility(String s) {
+        boolean flag = false;
+        ArrayList arraylist = new ArrayList();
+        boolean flag1 = arraylist.add("AO");
+        boolean flag2 = arraylist.add("OI");
+        boolean flag3 = arraylist.add("OX");
+        boolean flag4 = arraylist.add("AI");
+        boolean flag5 = arraylist.add("IR");
+        boolean flag6 = arraylist.add("AB");
+        boolean flag7 = arraylist.add("AG");
+        boolean flag8 = arraylist.add("AC");
+        boolean flag9 = arraylist.add("SC");
+        boolean flag10 = arraylist.add("FD");
+        Iterator iterator = arraylist.iterator();
+        do
+        {
+            if(!iterator.hasNext())
+                break;
+            String s1 = (String)iterator.next();
+            if(s.equals(s1))
+                flag = true;
+        } while(true);
+        return flag;
+    }
+
+    public void activate() {
+        activateMe();
+    }
+
+    public boolean changeBarringPassword(String facility, String s1, String s2, Message message) {
+        boolean flag = false;
+        if(checkFacility(facility)) {
+            mCM.changeBarringPassword(facility, s1, s2, message);
+            flag = true;
+        }
+        return flag;
+    }
+
+    public void deactivate() {
+        dispose();
+    }
+
+    public MCCEntry[] getAllCountryList() {
+        logUnexpectedCdmaMethodCall("getAllCountryList");
+        return null;
+    }
+
+    public Uri getCdmaEriAlertUri() {
+        logUnexpectedGsmMethodCall("getCdmaEriAlertUri");
+        return null;
+    }
+
+    public int getCdmaEriFileVersion() {
+        logUnexpectedGsmMethodCall("getCdmaEriFileVersion");
+        return -1;
+    }
+
+    public void getCellsInfo(Message message) {
+    }
+
+    public int getCid(String s) {
+        return 0;
+    }
+
+    public CommandsInterface getCommandsInterface() {
+        return mCM;
+    }
+
+    public List getCurrentPdpList() {
+        return null;
+    }
+
+    public Phone.DataState getDataConnectionState(String s) {
+        return getDataConnectionState();
+    }
+
+    public MCCEntry getEntryByMCC(int i) {
+        logUnexpectedCdmaMethodCall("getEntryByMCC");
+        return null;
+    }
+
+
+    public void getGsmBroadcastConfig(Message message) {
+        logUnexpectedCdmaMethodCall("getGsmBroadcastConfig");
+    }
+
+    public String getGsmImei() {
+        return "0";
+    }
+
+    public String getGsmImeiSv() {
+        return "0";
+    }
+
+    public int[] getHomeSystemId() {
+        logUnexpectedCdmaMethodCall("getHomeSystemId");
+        return null;
+    }
+
+
+    public void getIncomingCallerIdDisplay(Message message) {
+        logUnexpectedGsmMethodCall("getGsmBroadcastConfig");
+    }
+
+
+    public int getIpVersion(String s) {
+        return 0;
+    }
+
+    public boolean getReadPlmnModeFlag() {
+        return false;
+    }
+
+    public int getVoicemailPriority() {
+        return -1;
+    }
+
+    public boolean isCtryNameExist(String s) {
+        return true;
+    }
+
+    public boolean isCurrentMccUnknown() {
+        return false;
+    }
+
+    public boolean isSinglePdpOnly() {
+        int i = MotorolaSettings.getInt(mContext.getContentResolver(), SETTING_FTR_MULTIPLEPDP_ENABLED, 1);
+        Log.d(LOG_TAG, "isSinglePdpOnly:isMulti:" + Integer(i).toString());
+        boolean flag;
+        if(i == 0)
+            flag = true;
+        else
+            flag = false;
+        return flag;
+    }
+
+    public boolean isUnknownCountryExist() {
+        return false;
+    }
+
+    public void addUnknownCountry(MCCEntry mccentry) {
+    }
+
+    public void removeUnknownCountry() {
+    }
+
+    public void notifyRilError(int i) {
+        Integer integer = Integer.valueOf(i);
+        AsyncResult asyncresult = new AsyncResult(null, integer, null);
+        mRilErrorRegistrants.notifyRegistrants(asyncresult);
+    }
+
+    public boolean queryFacilityLock(String facility, String password, int serviceClass, Message message) {
+        boolean flag = false;
+        if(checkFacility(facility)) {
+            mCM.queryFacilityLock(facility, password, serviceClass, message);
+            flag = true;
+        }
+        return flag;
+    }
+
+    public boolean setFacilityLock(String facility, boolean flag, String password, int serviceClass, Message message) {
+        boolean flag1 = false;
+        if(checkFacility(facility)) {
+            mCM.setFacilityLock(facility, flag, password, serviceClass, message);
+            flag1 = true;
+        }
+        return flag1;
+    }
+
+    public void registerForMmiComplete(Handler handler, int i, Object obj) {
+        checkCorrectThread(handler);
+        mMmiCompleteRegistrants.addUnique(handler, i, obj);
+    }
+
+    public void unregisterForMmiComplete(Handler handler) {
+        checkCorrectThread(handler);
+        mMmiCompleteRegistrants.remove(handler);
+    }
+
+    public void registerForNumberInfo(Handler handler, int i, Object obj) {
+        mCM.registerForNumberInfo(handler, i, obj);
+    }
+
+    public void unregisterForNumberInfo(Handler handler) {
+        mCM.unregisterForNumberInfo(handler);
+    }
+
+    public void registerForSuppServiceCompleted(Handler handler, int i, Object obj) {
+        checkCorrectThread(handler);
+        mSuppServiceCompletedRegistrants.addUnique(handler, i, obj);
+    }
+
+    public void unregisterForSuppServiceCompleted(Handler handler) {
+        mSuppServiceCompletedRegistrants.remove(handler);
+    }
+
+    public void registerForUnknownMcc(Handler handler, int i, Object obj) {
+    }
+
+    public void registerRilError(Handler handler, int i, Object obj) {
+        checkCorrectThread(handler);
+        mRilErrorRegistrants.addUnique(handler, i, obj);
+    }
+
+    public void unRegisterRilError(Handler handler) {
+        mRilErrorRegistrants.remove(handler);
+    }
+
+    public void setGsmBroadcastActivation(boolean flag, Message message) {
+        logUnexpectedCdmaMethodCall("setGsmBroadcastActivation");
+    }
+
+    public void setGsmBroadcastConfig(SmsBroadcastConfigInfo asmsbroadcastconfiginfo[], Message message) {
+        logUnexpectedCdmaMethodCall("setGsmBroadcastConfig");
+    }
+
+    public boolean toAttmptNBPCD() {
+        return false;
+    }
+
+    public void unregisterForUnknownMcc(Handler handler) {
+    }
+    /* MOTOROLA CODE: END */ 
+
 }

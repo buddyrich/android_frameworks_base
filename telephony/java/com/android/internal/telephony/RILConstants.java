@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/*
+ * Motorola Mobility changes by Hashcode [11-17-2011]
+ *
+ */
 package com.android.internal.telephony;
 
 /**
@@ -66,6 +69,9 @@ public interface RILConstants {
     int NETWORK_MODE_EVDO_NO_CDMA   = 6; /* EvDo only */
     int NETWORK_MODE_GLOBAL         = 7; /* GSM/WCDMA, CDMA, and EvDo (auto mode, according to PRL)
                                             AVAILABLE Application Settings menu*/
+    /* MOTOROLA CODE: BEGIN */
+    int NETWORK_MODE_LTE_ONLY       = 8; /* LTE only */
+    /* MOTOROLA CODE: END */
     int PREFERRED_NETWORK_MODE      = NETWORK_MODE_WCDMA_PREF;
 
     /* CDMA subscription source. See ril.h RIL_REQUEST_CDMA_SET_SUBSCRIPTION */
@@ -274,4 +280,21 @@ cat include/telephony/ril.h | \
     int RIL_UNSOL_OEM_HOOK_RAW = 1028;
     int RIL_UNSOL_RINGBACK_TONE = 1029;
     int RIL_UNSOL_RESEND_INCALL_MUTE = 1030;
+    /* MOTOROLA CODE: BEGIN */
+    int PROFILE_IMS = 101;
+    int PROFILE_FOTA = 102;
+    int PROFILE_INTERNET = 103;
+    int PROFILE_CBS = 104;
+
+    int PDP_DEACTIVATE_CAUSE_NONE = 0;
+    int PDP_DEACTIVATE_CAUSE_POWER_OFF = 1;
+    int PDP_FAIL_IPV6_RS_ERROR = 128;
+
+    int IMS_FAILURE_4XX = 129;
+    int IMS_FAILURE_5XX = 130;
+    int IMS_FAILURE_TIMEOUTS = 131;
+    int IMS_FAILURE_AUTH = 132;
+    int IMS_FAILURE_403 = 133;
+    int IMS_FAILURE_REREG = 134;
+    /* MOTOROLA CODE: END */
 }
