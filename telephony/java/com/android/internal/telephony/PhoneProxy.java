@@ -37,7 +37,7 @@ import com.android.internal.telephony.ims.IsimRecords;
 import com.android.internal.telephony.test.SimulatedRadioControl;
 
 /* MOTOROLA CODE: BEGIN */
-import com.motorola.android.internal.telephony.ModemConfigManager;
+//import com.motorola.android.internal.telephony.ModemConfigManager;
 /* MOTOROLA_CODE: END */
 
 import java.util.List;
@@ -51,7 +51,7 @@ public class PhoneProxy extends Handler implements Phone {
     private IccSmsInterfaceManagerProxy mIccSmsInterfaceManagerProxy;
     private IccPhoneBookInterfaceManagerProxy mIccPhoneBookInterfaceManagerProxy;
     private PhoneSubInfoProxy mPhoneSubInfoProxy;
-    private ModemConfigManager mModemConfigManager;
+//    private ModemConfigManager mModemConfigManager;
 
     private boolean mResetModemOnRadioTechnologyChange = false;
 
@@ -80,20 +80,20 @@ public class PhoneProxy extends Handler implements Phone {
         mIccSmsInterfaceManagerProxy = new IccSmsInterfaceManagerProxy(
                 phone.getIccSmsInterfaceManager());
 
-        mModemConfigManager = ModemConfigManager.getInstance();
-        ModemInfo modeminfo = mModemConfigManager.getModemInfo(mModemId);
-        if(modeminfo.isDualMode() && modeminfo.getCdmaSubscriptionSource() == 1) {
-            GSMPhone gsmphone = (GSMPhone)modeminfo.getGsmPhone();
-            if(gsmphone != null) {
-                mIccPhoneBookInterfaceManagerProxy = new IccPhoneBookInterfaceManagerProxy(gsmphone.getIccPhoneBookInterfaceManager());
-            }
-            else {
-                logd("no gsm is available, for dual mode set");
-            }
-        }
-        else {
+//        mModemConfigManager = ModemConfigManager.getInstance();
+//        ModemInfo modeminfo = mModemConfigManager.getModemInfo(mModemId);
+//        if(modeminfo.isDualMode() && modeminfo.getCdmaSubscriptionSource() == 1) {
+//            GSMPhone gsmphone = (GSMPhone)modeminfo.getGsmPhone();
+//            if(gsmphone != null) {
+//                mIccPhoneBookInterfaceManagerProxy = new IccPhoneBookInterfaceManagerProxy(gsmphone.getIccPhoneBookInterfaceManager());
+//            }
+//            else {
+//                logd("no gsm is available, for dual mode set");
+//            }
+//        }
+//        else {
             mIccPhoneBookInterfaceManagerProxy = new IccPhoneBookInterfaceManagerProxy(mActivePhone.getIccPhoneBookInterfaceManager());
-        }
+//        }
 
         mPhoneSubInfoProxy = new PhoneSubInfoProxy(phone.getPhoneSubInfo());
         mCommandsInterface = ((PhoneBase)mActivePhone).mCM;

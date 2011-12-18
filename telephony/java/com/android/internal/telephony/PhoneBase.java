@@ -234,13 +234,13 @@ public abstract class PhoneBase extends Handler implements Phone {
         initialize();
     }
 
-    protected PhoneBase(boolean flag, PhoneNotifier phonenotifier, Context context, CommandsInterface commandsinterface,
-            boolean unitTestMode) {
-        if(!flag) {
+    protected PhoneBase(boolean worldPhoneFlag, PhoneNotifier phonenotifier, Context context, CommandsInterface ci, boolean unitTestMode) {
+        if (!worldPhoneFlag) {
             Log.e(LOG_TAG, "PhoneBase, this shouldn't be called.");
-        } else {
-            this.mNotifier = notifier;
-            this.mContext = context;
+        }
+        else {
+            mNotifier = notifier;
+            mContext = context;
             mLooper = Looper.myLooper();
             mCM = ci;
 
@@ -250,15 +250,13 @@ public abstract class PhoneBase extends Handler implements Phone {
         }
     }
 
-    private void activateMe()
-    {
+    private void activateMe() {
         setPropertiesByCarrier();
         mCM.setOnCallRing(this, EVENT_CALL_RING, null);
         mIsTheCurrentActivePhone = true;
     }
 
-    private void initialize()
-    {
+    private void initialize() {
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);	// Init
         mDnsCheckDisabled = sp.getBoolean(DNS_SERVER_CHECK_DISABLED_KEY, false);	// Init
 

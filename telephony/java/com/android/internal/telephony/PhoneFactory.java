@@ -55,11 +55,125 @@ public class PhoneFactory {
         makeDefaultPhone(context);
     }
 
+
+    /**
+     * MOTOROLA WorldPhone Create
+     */
+    private static void makeDefaultPhoneForCdmaGsmWorldPhone(Context context) {
+        synchronized(Phone.class) {
+            if(!sMadeDefaults) {
+                sLooper = Looper.myLooper();
+                sContext = context;
+                if (sLooper == null) {
+                    throw new RuntimeException(
+                        "PhoneFactory.makeDefaultPhone must be called from Looper thread");
+                }
+
+                int retryCount = 0;
+                for(;;) {
+                    boolean hasException = false;
+                    retryCount ++;
+
+                    try {
+                        // use UNIX domain socket to
+                        // prevent subsequent initialization
+                        new LocalServerSocket("com.android.internal.telephony");
+                    } catch (java.io.IOException ex) {
+                        hasException = true;
+                    }
+                    if ( !hasException ) {
+                        break;
+                    } else if (retryCount > SOCKET_OPEN_MAX_RETRY) {
+                        throw new RuntimeException("PhoneFactory probably already running");
+                    } else {
+                        try {
+                            Thread.sleep(SOCKET_OPEN_RETRY_MILLIS);
+                        } catch (InterruptedException er) {
+                        }
+                    }
+                }
+
+        }
+
+
+          goto _L1
+        Exception exception;
+        exception;
+        com/android/internal/telephony/Phone;
+        JVM INSTR monitorexit ;
+        throw exception;
+        int i = 0;
+_L6:
+        boolean flag = false;
+        i++;
+        LocalServerSocket localserversocket;
+        int j1;
+        try
+        {
+            localserversocket = new LocalServerSocket("com.android.internal.telephony");
+        }
+        catch(IOException ioexception)
+        {
+            flag = true;
+        }
+        if(flag) goto _L3; else goto _L2
+_L2:
+        sPhoneNotifier = new DefaultPhoneNotifier();
+        int preferredNetworkMode = android.provider.Settings.Secure.getInt(context.getContentResolver(), "preferred_network_mode", 0);
+        Log.i("PHONE", "Network Mode set to " + Integer.toString(preferredNetworkMode));
+        int cdmaSubscription = android.provider.Settings.Secure.getInt(context.getContentResolver(), "preferred_cdma_subscription", 1);
+        Log.i("PHONE", "Cdma Subscription set to " + Integer.toString(cdmaSubscription));
+        sCommandsInterface = new RIL(context, preferredNetworkMode, cdmaSubscription);
+        j1 = getPhoneType(preferredNetworkMode);
+        if(j1 != 1) goto _L5; else goto _L4
+_L4:
+        sCdmaPhoneIns = new CDMAPhone(true, false, context, sCommandsInterface, sPhoneNotifier);
+        sGsmPhoneIns = new GSMPhone(true, false, context, sCommandsInterface, sPhoneNotifier);
+        sProxyPhone = new PhoneProxy(true, sGsmPhoneIns);
+        Log.i(LOG_TAG, "Creating GSMPhone");
+_L8:
+        sMadeDefaults = true;
+_L1:
+        com/android/internal/telephony/Phone;
+        JVM INSTR monitorexit ;
+        return;
+_L3:
+        if(i > 3)
+            throw new RuntimeException("PhoneFactory probably already running");
+        long l1 = 2000L;
+        try
+        {
+            Thread.sleep(l1);
+        }
+        catch(InterruptedException interruptedexception) { }
+          goto _L6
+_L5:
+        if(j1 != 2) goto _L8; else goto _L7
+_L7:
+        sGsmPhoneIns = new GSMPhone(true, true, context, sCommandsInterface, sPhoneNotifier);
+        sCdmaPhoneIns = new CDMAPhone(true, true, context, sCommandsInterface, sPhoneNotifier);
+        sProxyPhone = new PhoneProxy(true, sCdmaPhoneIns);
+        Log.i(LOG_TAG, "Creating CDMAPhone");
+          goto _L8
+    }
+
     /**
      * FIXME replace this with some other way of making these
      * instances
      */
     public static void makeDefaultPhone(Context context) {
+        /* BEGIN MOTOROLA */
+        boolean flag = false;
+        if (isCdmaGsmWorldPhoneEnabled) {
+            makeDefaultPhoneForCdmaGsmWorldPhone(context);
+            return;
+        }
+        isLteTestWithoutCsim = (SystemProperties.getInt("persist.radio.lte.testsim", 0) == 2);
+        if(SystemProperties.getBoolean("ro.mot.tmp.telephony.refactor", false) && !isLteTestWithoutCsim) {
+            makeMotoDefaultPhone(context);
+            return;
+        }
+        /* END MOTOROLA */
         synchronized(Phone.class) {
             if (!sMadeDefaults) {
                 sLooper = Looper.myLooper();

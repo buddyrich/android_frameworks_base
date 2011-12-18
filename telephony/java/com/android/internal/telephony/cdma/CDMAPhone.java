@@ -136,14 +136,10 @@ public class CDMAPhone extends PhoneBase {
 
     // Constructors
     public CDMAPhone(Context context, CommandsInterface ci, PhoneNotifier notifier) {
-        super(notifier, context, ci, false);
-        initSstIcc();
-        partialInit(context, notifier);
-        init(context, notifier);
+        this(context, ci, notifier, false);
     }
 
-    public CDMAPhone(Context context, CommandsInterface ci, PhoneNotifier notifier,
-            boolean unitTestMode) {
+    public CDMAPhone(Context context, CommandsInterface ci, PhoneNotifier notifier, boolean unitTestMode) {
         super(notifier, context, ci, unitTestMode);
         initSstIcc();
         partialInit(context, notifier);
@@ -159,8 +155,8 @@ public class CDMAPhone extends PhoneBase {
     }
 
     /* FIXME: Called when radio swap is announced */
-    public CDMAPhone(boolean flag, boolean flag1, Context context, CommandsInterface commandsinterface, PhoneNotifier notifier) {
-        this.PhoneBase(flag, phonenotifier, context, commandsinterface, false);
+    public CDMAPhone(boolean worldPhoneFlag, boolean switchToCDMAFlag, Context context, CommandsInterface ci, PhoneNotifier notifier) {
+        this.PhoneBase(worldPhoneFlag, phonenotifier, context, ci, false);
         super.mIsTheCurrentActivePhone = true;
         partialInit(context, notifier);
         init(context, notifier);
