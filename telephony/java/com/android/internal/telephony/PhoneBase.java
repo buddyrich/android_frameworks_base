@@ -125,6 +125,11 @@ public abstract class PhoneBase extends Handler implements Phone {
     public SmsStorageMonitor mSmsStorageMonitor;
     public SmsUsageMonitor mSmsUsageMonitor;
     public SMSDispatcher mSMS;
+    
+    /* MOTOROLA CODE: BEGIN */
+    /* used for dual radio phones to support network switching */
+    protected int mModemId = -1;
+    /* MOTOROLA CODE: END */
 
     /**
      * Set a system property, unless we're in unit test mode
@@ -207,13 +212,55 @@ public abstract class PhoneBase extends Handler implements Phone {
         mLooper = Looper.myLooper();
         mCM = ci;
 
-        setPropertiesByCarrier();
+        /* MOTOROLA CODE: BEGIN */
+        setUnitTestMode(unitTestMode);
+
+        initialize();
+        activateMe();
+        /* MOTOROLA: END */
+    }
+
+    /* MOTOROLA: BEGIN */
+    protected PhoneBase(int modemId, PhoneNotifier notifier, Context context, CommandsInterface ci,
+            boolean unitTestMode) {
+        this.mModemId = modemId;
+        this.mNotifier = notifier;
+        this.mContext = context;
+        mLooper = Looper.myLooper();
+        mCM = ci;
 
         setUnitTestMode(unitTestMode);
 
-        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
-        mDnsCheckDisabled = sp.getBoolean(DNS_SERVER_CHECK_DISABLED_KEY, false);
+        initialize();
+    }
+
+    protected PhoneBase(boolean flag, PhoneNotifier phonenotifier, Context context, CommandsInterface commandsinterface,
+            boolean unitTestMode) {
+        if(!flag) {
+            Log.e(LOG_TAG, "PhoneBase, this shouldn't be called.");
+        } else {
+            this.mNotifier = notifier;
+            this.mContext = context;
+            mLooper = Looper.myLooper();
+            mCM = ci;
+
+            setUnitTestMode(unitTestMode);
+
+            initialize();
+        }
+    }
+
+    private void activateMe()
+    {
+        setPropertiesByCarrier();
         mCM.setOnCallRing(this, EVENT_CALL_RING, null);
+        mIsTheCurrentActivePhone = true;
+    }
+
+    private void initialize()
+    {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);	// Init
+        mDnsCheckDisabled = sp.getBoolean(DNS_SERVER_CHECK_DISABLED_KEY, false);	// Init
 
         /* "Voice capable" means that this device supports circuit-switched
         * (i.e. voice) phone calls over the telephony network, and is allowed
@@ -246,6 +293,7 @@ public abstract class PhoneBase extends Handler implements Phone {
         mSmsStorageMonitor = new SmsStorageMonitor(this);
         mSmsUsageMonitor = new SmsUsageMonitor(context.getContentResolver());
     }
+    /* MOTOROLA: END */
 
     public void dispose() {
         synchronized(PhoneProxy.lockForRadioTechnologyChange) {
@@ -263,6 +311,16 @@ public abstract class PhoneBase extends Handler implements Phone {
         mSmsStorageMonitor = null;
         mSmsUsageMonitor = null;
     }
+
+    /* MOTOTOLA CODE: BEGIN */
+    public void activate() {
+        activateMe();
+    }
+
+    public void deactivate() {
+        dispose();
+    }
+    /* MOTOROLA CODE: END */
 
     /**
      * When overridden the derived class needs to call

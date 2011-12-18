@@ -36,6 +36,10 @@ import com.android.internal.telephony.gsm.UsimServiceTable;
 import com.android.internal.telephony.ims.IsimRecords;
 import com.android.internal.telephony.test.SimulatedRadioControl;
 
+/* MOTOROLA CODE: BEGIN */
+import com.motorola.android.internal.telephony.ModemConfigManager;
+/* MOTOROLA_CODE: END */
+
 import java.util.List;
 
 public class PhoneProxy extends Handler implements Phone {
@@ -47,13 +51,87 @@ public class PhoneProxy extends Handler implements Phone {
     private IccSmsInterfaceManagerProxy mIccSmsInterfaceManagerProxy;
     private IccPhoneBookInterfaceManagerProxy mIccPhoneBookInterfaceManagerProxy;
     private PhoneSubInfoProxy mPhoneSubInfoProxy;
+    private ModemConfigManager mModemConfigManager;
 
     private boolean mResetModemOnRadioTechnologyChange = false;
 
+    /* MOTOROLA CODE: BEGIN */
+    private boolean mIsCdmaGsmWorldPhone = false;
+    private boolean mIsNewArch = false;
+    private int mModemId;
+    private String mOutgoingPhone = "";
+    /* MOTOROLA CODE: END */
+
     private static final int EVENT_RADIO_TECHNOLOGY_CHANGED = 1;
+    private static final String ACTION_NETWORKMODE_SWITCH = "com.motorola.intent.action.NETWORKMODE_SWITCH";
+
     private static final String LOG_TAG = "PHONE";
 
+
     //***** Class Methods
+
+    /* MOTOROLA CODE: BEGIN */
+
+    /* Multi Radio Constructor [LTE/CDMA] */
+    public PhoneProxy(int modemId, Phone phone) {
+        mIsNewArch = true;
+        mModemId = modemId;
+        mActivePhone = phone;
+        mIccSmsInterfaceManagerProxy = new IccSmsInterfaceManagerProxy(
+                phone.getIccSmsInterfaceManager());
+
+        mModemConfigManager = ModemConfigManager.getInstance();
+        ModemInfo modeminfo = mModemConfigManager.getModemInfo(mModemId);
+        if(modeminfo.isDualMode() && modeminfo.getCdmaSubscriptionSource() == 1) {
+            GSMPhone gsmphone = (GSMPhone)modeminfo.getGsmPhone();
+            if(gsmphone != null) {
+                mIccPhoneBookInterfaceManagerProxy = new IccPhoneBookInterfaceManagerProxy(gsmphone.getIccPhoneBookInterfaceManager());
+            }
+            else {
+                logd("no gsm is available, for dual mode set");
+            }
+        }
+        else {
+            mIccPhoneBookInterfaceManagerProxy = new IccPhoneBookInterfaceManagerProxy(mActivePhone.getIccPhoneBookInterfaceManager());
+        }
+
+        mPhoneSubInfoProxy = new PhoneSubInfoProxy(phone.getPhoneSubInfo());
+        mCommandsInterface = ((PhoneBase)mActivePhone).mCM;
+        mIccCardProxy = new IccCardProxy(mActivePhone.getContext();, mCommandsInterface, mModemId);
+        mIccCardProxy.setActivePhoneType(mActivePhone.getPhoneType());
+        if(mActivePhone.getPhoneType() == Phone.PHONE_TYPE_CDMA)
+            ((CDMAPhone)mActivePhone).activate();
+        else if(mActivePhone.getPhoneType() == Phone.PHONE_TYPE_GSM)
+            ((GSMPhone)mActivePhone).activate();
+        else
+            logd("unknow phone type is in PhoneProxy");
+
+        mCommandsInterface.registerForRadioTechnologyChanged(
+                this, EVENT_RADIO_TECHNOLOGY_CHANGED, null);
+    }
+
+    /* World Phone Constructor */
+    public PhoneProxy(boolean isWorldPhone, Phone phone) {
+        if (!isWorldPhone) {
+            logd("this shouldn't be called.");
+            return;
+        }
+        mIsCdmaGsmWorldPhone = isWorldPhone;
+
+        mActivePhone = phone;
+        mResetModemOnRadioTechnologyChange = SystemProperties.getBoolean(TelephonyProperties.PROPERTY_RESET_ON_RADIO_TECH_CHANGE, false);
+        mIccSmsInterfaceManagerProxy = new IccSmsInterfaceManagerProxy(phone.getIccSmsInterfaceManager());
+        if(PhoneFactory.getCdmaSubscription() == 1) {
+            mIccPhoneBookInterfaceManagerProxy = new IccPhoneBookInterfaceManagerProxy(((GSMPhone)PhoneFactory.getGsmPhone()).getIccPhoneBookInterfaceManager());
+        } else {
+            mIccPhoneBookInterfaceManagerProxy = new IccPhoneBookInterfaceManagerProxy(mActivePhone.getIccPhoneBookInterfaceManager());
+        }
+        mPhoneSubInfoProxy = new PhoneSubInfoProxy(phone.getPhoneSubInfo());
+        mCommandsInterface = ((PhoneBase)mActivePhone).mCM;
+        mCommandsInterface.registerForRadioTechnologyChanged(this, 1, null);
+    }
+    /* MOTOROLA CODE: END */
+
     public PhoneProxy(Phone phone) {
         mActivePhone = phone;
         mResetModemOnRadioTechnologyChange = SystemProperties.getBoolean(
@@ -68,8 +146,157 @@ public class PhoneProxy extends Handler implements Phone {
                 this, EVENT_RADIO_TECHNOLOGY_CHANGED, null);
     }
 
+    /* MOTOROLA CODE: BEGIN */
+    private void handleMessageForCdmaGsmWorldPhone(Message message) {
+        /* FIXME: Bail if not network type: 67?? */
+        switch(msg.what) {
+            //case EVENT_RADIO_TECHNOLOGY_CHANGED:
+            //    break;
+            default:
+                Log.e(LOG_TAG,"Error! This handler:: handleMessageForCdmaGsmWorldPhone was not registered for this message type. Message: "
+                        + msg.what);
+                break;
+        /*
+        mOutgoingPhone = ((PhoneBase)mActivePhone).getPhoneName();
+        String s3 = "GSMPhone";
+        if(mOutgoingPhone.equals("GSM")) s3 = "CDMAPhone";
+        logd("Switching phone from " + mOutgoingPhone + "Phone to " + s3);
+
+        boolean resetModemFlag = false;
+        if(mResetModemOnRadioTechnologyChange && mCommandsInterface.getRadioState().isOn()) {
+            resetModemFlag = true;
+            loge("Setting Radio Power to Off");
+            mCommandsInterface.setRadioPower(false, null);
+        }
+
+        if(mOutgoingPhone.equals("GSM")) {
+            loge("switch to CDMAPhone and switch out from the old GSMPhone.");
+            ((GSMPhone)mActivePhone).switchToCdma();
+            Phone phone = mActivePhone;
+            mActivePhone = PhoneFactory.getCdmaPhone();
+            ((CDMAPhone)mActivePhone).switchToCdma();
+            SystemProperties.set("persist.radio.ap.phonetype", Integer.toString(Phone.PHONE_TYPE_CDMA));
+        }
+        else {
+            logd("Make a new GSMPhone and destroy the old CDMAPhone.");
+            ((CDMAPhone)mActivePhone).switchToGsm();
+            Phone phone2 = mActivePhone;
+            mActivePhone = PhoneFactory.getGsmPhone();
+            ((GSMPhone)mActivePhone).switchToGsm();
+            SystemProperties.set("persist.radio.ap.phonetype", Integer.toString(Phone.PHONE_TYPE_GSM));
+        }
+
+        if (mResetModemOnRadioTechnologyChange) {
+            logd("Resetting Radio");
+            mCommandsInterface.setRadioPower(resetModemFlag, null);
+        }
+        mIccSmsInterfaceManagerProxy;.setmIccSmsInterfaceManager(mActivePhone.getIccSmsInterfaceManager());
+
+        if (PhoneFactory.getCdmaSubscription() != 1) {
+            mIccPhoneBookInterfaceManagerProxy.setmIccPhoneBookInterfaceManager(mActivePhone.getIccPhoneBookInterfaceManager());
+        }
+        mPhoneSubInfoProxy.setmPhoneSubInfo(mActivePhone.getPhoneSubInfo());
+        mCommandsInterface = ((PhoneBase)mActivePhone).mCM;
+        intent = new Intent(TelephonyIntents.ACTION_RADIO_TECHNOLOGY_CHANGED);
+        intent.addFlags(0x20000000);
+        intent.putExtra("phoneName", mActivePhone.getPhoneName());
+        ActivityManagerNative.broadcastStickyIntent(intent, null);
+        */
+        }
+        super.handleMessage(msg);
+    }
+
+    private void handleMessageForNewArch(Message msg) {
+        /* FIXME: Bail if not network type: 67?? */
+        switch(msg.what) {
+            //case EVENT_RADIO_TECHNOLOGY_CHANGED:
+            //    break;
+            default:
+                Log.e(LOG_TAG,"Error! This handler::handleMessageForNewArch was not registered for this message type. Message: "
+                        + msg.what);
+                break;
+        /*
+        case 67:
+        mOutgoingPhone = ((PhoneBase)mActivePhone).getPhoneName();
+        String s3 = "GSMPhone";
+        if(mOutgoingPhone.equals("GSM")) s3 = "CDMAPhone";
+        logd("Switching phone from " + mOutgoingPhone + "Phone to " + s3);
+
+        boolean resetModemFlag = false;
+        if(mResetModemOnRadioTechnologyChange && mCommandsInterface.getRadioState().isOn()) {
+            resetModemFlag = true;
+            loge("Setting Radio Power to Off");
+            mCommandsInterface.setRadioPower(false, null);
+        }
+
+        ModemInfo modeminfo = mModemConfigManager.getModemInfo(mModemId);
+        if (!mOutgoingPhone.equals("GSM")) {
+            handleMessage(message);
+            return;
+        }
+
+        logd("switch to CDMAPhone and switch out from the old GSMPhone.");
+        ((GSMPhone)mActivePhone).deactivate();
+        phone = mActivePhone;
+        mActivePhone = modeminfo.getCdmaPhone();
+        if(mActivePhone == null) {
+            loge("error active phone is null");
+            return;
+        }
+        ((CDMAPhone)mActivePhone).activate();
+
+_L5:
+
+        mIccCardProxy.setActivePhoneType(mActivePhone.getPhoneType());
+        modeminfo.setPhoneTypeInGlobalNetworkMode(mActivePhone.getPhoneType());
+
+        if(mResetModemOnRadioTechnologyChange) {
+            logd("Resetting Radio");
+            mCommandsInterface.setRadioPower(resetModemFlag, null);
+        }
+        mIccSmsInterfaceManagerProxy.setmIccSmsInterfaceManager(mActivePhone.getIccSmsInterfaceManager());
+
+        if (mActivePhone.getPhoneType() != Phone.PHONE_TYPE_CDMA || modeminfo.getCdmaSubscriptionSource() != 1) {
+            mIccPhoneBookInterfaceManagerProxy.setmIccPhoneBookInterfaceManager(mActivePhone.getIccPhoneBookInterfaceManager());
+        }
+
+        mPhoneSubInfoProxy.setmPhoneSubInfo(mActivePhone.getPhoneSubInfo());
+        mCommandsInterface = ((PhoneBase)mActivePhone).mCM;
+
+        Intent intent = new Intent("android.intent.action.RADIO_TECHNOLOGY");
+        intent.addFlags(0x20000000);
+        intent.putExtra("phoneName", mActivePhone.getPhoneName());
+        ActivityManagerNative.broadcastStickyIntent(intent, null);
+        if(true) goto _L4; else goto _L3
+
+_L3:
+        logd("Make a new GSMPhone and destroy the old CDMAPhone.");
+        ((CDMAPhone)mActivePhone).deactivate();
+        Phone phone2 = mActivePhone;
+        Phone phone3 = modeminfo.getGsmPhone();
+        mActivePhone = phone3;
+        if(mActivePhone == null)
+            loge("error, active phone  gsm is null");
+        ((GSMPhone)mActivePhone).activate();
+        */
+        }
+        super.handleMessage(msg);
+    }
+    /* MOTOROLA CODE: END */
+
     @Override
     public void handleMessage(Message msg) {
+        /* MOTOROLA CODE: BEGIN */
+        if (mIsCdmaGsmWorldPhone) {
+            handleMessageForCdmaGsmWorldPhone(message);
+            return;
+        }
+        if (mIsNewArch) {
+            handleMessageForNewArch(message);
+            return;
+        }
+        /* MOTOROLA CODE: END */
+
         switch(msg.what) {
         case EVENT_RADIO_TECHNOLOGY_CHANGED:
             //switch Phone from CDMA to GSM or vice versa
@@ -140,7 +367,7 @@ public class PhoneProxy extends Handler implements Phone {
         default:
             Log.e(LOG_TAG,"Error! This handler was not registered for this message type. Message: "
                     + msg.what);
-        break;
+            break;
         }
         super.handleMessage(msg);
     }
@@ -543,6 +770,8 @@ public class PhoneProxy extends Handler implements Phone {
     }
 
     public void setPreferredNetworkType(int networkType, Message response) {
+        Intent intent = new Intent(ACTION_NETWORKMODE_SWITCH);
+        getContext().sendBroadcast(intent);
         mActivePhone.setPreferredNetworkType(networkType, response);
     }
 

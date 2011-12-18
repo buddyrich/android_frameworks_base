@@ -138,6 +138,7 @@ public class CDMAPhone extends PhoneBase {
     public CDMAPhone(Context context, CommandsInterface ci, PhoneNotifier notifier) {
         super(notifier, context, ci, false);
         initSstIcc();
+        partialInit(context, notifier);
         init(context, notifier);
     }
 
@@ -145,8 +146,26 @@ public class CDMAPhone extends PhoneBase {
             boolean unitTestMode) {
         super(notifier, context, ci, unitTestMode);
         initSstIcc();
+        partialInit(context, notifier);
         init(context, notifier);
     }
+
+    /* MOTOROLA: BEGIN */
+    /* Called on boot to setup radios */
+    public CDMAPhone(Context context, CommandsInterface ci, PhoneNotifier notifier, int modemId) {
+        super(modemId, notifier, context, ci, false);
+        initSstIcc();
+        /* Partial Init */
+    }
+
+    /* FIXME: Called when radio swap is announced */
+    public CDMAPhone(boolean flag, boolean flag1, Context context, CommandsInterface commandsinterface, PhoneNotifier notifier) {
+        this.PhoneBase(flag, phonenotifier, context, commandsinterface, false);
+        super.mIsTheCurrentActivePhone = true;
+        partialInit(context, notifier);
+        init(context, notifier);
+    }
+    /* MOTOROLA: END */
 
     protected void initSstIcc() {
         mSST = new CdmaServiceStateTracker(this);
@@ -155,7 +174,7 @@ public class CDMAPhone extends PhoneBase {
         mIccFileHandler = new RuimFileHandler(this);
     }
 
-    protected void init(Context context, PhoneNotifier notifier) {
+    protected void partialInit(Context context, PhoneNotifier notifier) {
         mCM.setPhoneType(Phone.PHONE_TYPE_CDMA);
         mCT = new CdmaCallTracker(this);
         mSMS = new CdmaSMSDispatcher(this, mSmsStorageMonitor, mSmsUsageMonitor);
@@ -166,7 +185,9 @@ public class CDMAPhone extends PhoneBase {
         mEriManager = new EriManager(this, context, EriManager.ERI_FROM_XML);
         mCcatService = CatService.getInstance(mCM, mIccRecords, mContext,
                 mIccFileHandler, mIccCard);
+    }
 
+    protected void init(Context context, PhoneNotifier notifier) {
         mCM.registerForAvailable(this, EVENT_RADIO_AVAILABLE, null);
         mIccRecords.registerForRecordsLoaded(this, EVENT_RUIM_RECORDS_LOADED, null);
         mCM.registerForOffOrNotAvailable(this, EVENT_RADIO_OFF_OR_NOT_AVAILABLE, null);
@@ -219,6 +240,10 @@ public class CDMAPhone extends PhoneBase {
         synchronized(PhoneProxy.lockForRadioTechnologyChange) {
             super.dispose();
             log("dispose");
+
+            /* MOTOROLA: BEGIN */
+            deactivateMe();
+            /* MOTOROLA: END */
 
             //Unregister from all former registered events
             mIccRecords.unregisterForRecordsLoaded(this); //EVENT_RUIM_RECORDS_LOADED
