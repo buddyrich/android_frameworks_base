@@ -20,7 +20,6 @@ import android.content.Context;
 import android.os.Parcel;
 import android.util.Log;
 
-import com.android.internal.telephony.gsm.NetworkInfo;
 import com.android.internal.telephony.gsm.SuppServiceNotification;
 
 import java.util.ArrayList;
@@ -31,11 +30,7 @@ import java.util.ArrayList;
  *
  * {@hide}
  */
-public class MotoWrigley3GRIL extends RIL {
-    public MotoWrigley3GRIL(Context context) {
-        super(context);
-    }
-
+public class MotoWrigley3GRIL extends RIL implements CommandsInterface {
     public MotoWrigley3GRIL(Context context, int networkMode, int cdmaSubscription) {
         super(context, networkMode, cdmaSubscription);
     }
@@ -58,7 +53,7 @@ public class MotoWrigley3GRIL extends RIL {
          * It never sends 10 where it would be appropriate, so it's safe
          * to just convert every occurence of 10 to 0.
          */
-        if (notification.notificationType == SuppServiceNotification.NOTIFICATION_TYPE_MT) {
+        if (notification.notificationType == 1) {
             if (notification.code == SuppServiceNotification.MT_CODE_ADDITIONAL_CALL_FORWARDED) {
                 notification.code = SuppServiceNotification.MT_CODE_FORWARDED_CALL;
             }

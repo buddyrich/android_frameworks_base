@@ -142,37 +142,17 @@ public class PhoneFactory {
                 try {
                     Class<?> classDefinition = Class.forName("com.android.internal.telephony." + sRILClassname);
                     Constructor<?> constructor = classDefinition.getConstructor(new Class[] {Context.class, int.class, int.class});
-                    sCommandsInterface = (RIL) constructor.newInstance(new Object[] {context, networkMode, cdmaSubscription});
+                    if ("motow3g".equals(sRILClassname)) {
+                        Log.i(LOG_TAG, "Using Motorola Wrigley 3G RIL");
+                        sCommandsInterface = new MotoWrigley3GRIL(context, networkMode, cdmaSubscription);
+                    } else {
+                        sCommandsInterface = (RIL) constructor.newInstance(new Object[] {context, networkMode, cdmaSubscription});
+                    }
                 } catch (Exception e) {
                     // 6 different types of exceptions are thrown here that it's
                     // easier to just catch Exception as our "error handling" is the same.
                     Log.wtf(LOG_TAG, "Unable to construct command interface", e);
                     throw new RuntimeException(e);
-                if("samsung".equals(sRILClassname))
-                {
-                    Log.i(LOG_TAG, "Using Samsung RIL");
-                    sCommandsInterface = new SamsungRIL(context, networkMode, cdmaSubscription);
-                } else if ("htc".equals(sRILClassname)) {
-                    Log.i(LOG_TAG, "Using HTC RIL");
-                    sCommandsInterface = new HTCRIL(context, networkMode, cdmaSubscription);
-                } else if("lgestar".equals(sRILClassname)) {
-                    Log.i(LOG_TAG, "Using LGE Star RIL");
-                    sCommandsInterface = new LGEStarRIL(context, networkMode, cdmaSubscription);
-                } else if ("semc".equals(sRILClassname)) {
-                    Log.i(LOG_TAG, "Using Semc RIL");
-                    sCommandsInterface = new SemcRIL(context, networkMode, cdmaSubscription);
-                } else if ("lgeqcom".equals(sRILClassname)) {
-                    Log.i(LOG_TAG, "Using LGE Qualcomm RIL");
-                    sCommandsInterface = new LGEQualcommRIL(context, networkMode, cdmaSubscription);
-                } else if ("mototegra".equals(sRILClassname)) {
-                    Log.i(LOG_TAG, "Using Motorola Tegra2 RIL");
-                    sCommandsInterface = new MotoTegraRIL(context, networkMode, cdmaSubscription);
-                } else if ("motow3g".equals(sRILClassname)) {
-                    Log.i(LOG_TAG, "Using Motorola Wrigley 3G RIL");
-                    sCommandsInterface = new MotoWrigley3GRIL(context, networkMode, cdmaSubscription);
-);
-                } else {
-                    sCommandsInterface = new RIL(context, networkMode, cdmaSubscription);
                 }
 
                 int phoneType = getPhoneType(networkMode);
