@@ -17,6 +17,7 @@
 package android.content.res;
 
 import android.os.ParcelFileDescriptor;
+import android.util.Config;
 import android.util.Log;
 import android.util.TypedValue;
 
@@ -57,12 +58,12 @@ public final class AssetManager {
     public static final int ACCESS_BUFFER = 3;
 
     private static final String TAG = "AssetManager";
-    private static final boolean localLOGV = false || false;
+    private static final boolean localLOGV = Config.LOGV || false;
     
     private static final boolean DEBUG_REFS = false;
     
     private static final Object sSync = new Object();
-    /*package*/ static AssetManager sSystem = null;
+    private static AssetManager sSystem = null;
 
     private final TypedValue mValue = new TypedValue();
     private final long[] mOffsets = new long[2];
@@ -94,6 +95,7 @@ public final class AssetManager {
             if (localLOGV) Log.v(TAG, "New asset manager: " + this);
             ensureSystemAssets();
         }
+        android.app.MiuiThemeHelper.addExtraAssetPaths(this); // MIUIHOOK
     }
 
     private static void ensureSystemAssets() {
@@ -115,6 +117,7 @@ public final class AssetManager {
         }
         init();
         if (localLOGV) Log.v(TAG, "New asset manager: " + this);
+        android.app.MiuiThemeHelper.addExtraAssetPaths(this); // MIUIHOOK
     }
 
     /**
@@ -148,7 +151,7 @@ public final class AssetManager {
     /*package*/ final CharSequence getResourceText(int ident) {
         synchronized (this) {
             TypedValue tmpValue = mValue;
-            int block = loadResourceValue(ident, (short) 0, tmpValue, true);
+            int block = loadResourceValue(ident, tmpValue, true);
             if (block >= 0) {
                 if (tmpValue.type == TypedValue.TYPE_STRING) {
                     return mStringBlocks[block].get(tmpValue.data);
@@ -189,11 +192,10 @@ public final class AssetManager {
 
 
     /*package*/ final boolean getResourceValue(int ident,
-                                               int density,
                                                TypedValue outValue,
                                                boolean resolveRefs)
     {
-        int block = loadResourceValue(ident, (short) density, outValue, resolveRefs);
+        int block = loadResourceValue(ident, outValue, resolveRefs);
         if (block >= 0) {
             if (outValue.type != TypedValue.TYPE_STRING) {
                 return true;
@@ -234,7 +236,6 @@ public final class AssetManager {
             StringBlock[] blocks = mStringBlocks;
             if (blocks == null) {
                 ensureStringBlocks();
-                blocks = mStringBlocks;
             }
             outValue.string = blocks[block].get(outValue.data);
             return true;
@@ -252,7 +253,7 @@ public final class AssetManager {
         }
     }
 
-    /*package*/ final void makeStringBlocks(boolean copyFromSystem) {
+    private final void makeStringBlocks(boolean copyFromSystem) {
         final int sysNum = copyFromSystem ? sSystem.mStringBlocks.length : 0;
         final int num = getStringBlockCount();
         mStringBlocks = new StringBlock[num];
@@ -652,7 +653,6 @@ public final class AssetManager {
     public native final void setConfiguration(int mcc, int mnc, String locale,
             int orientation, int touchscreen, int density, int keyboard,
             int keyboardHidden, int navigation, int screenWidth, int screenHeight,
-            int smallestScreenWidthDp, int screenWidthDp, int screenHeightDp,
             int screenLayout, int uiMode, int majorVersion);
 
     /**
@@ -683,8 +683,8 @@ public final class AssetManager {
 
     /** Returns true if the resource was found, filling in mRetStringBlock and
      *  mRetData. */
-    private native final int loadResourceValue(int ident, short density, TypedValue outValue,
-            boolean resolve);
+    private native final int loadResourceValue(int ident, TypedValue outValue,
+                                               boolean resolve);
     /** Returns true if the resource was found, filling in mRetStringBlock and
      *  mRetData. */
     private native final int loadResourceBagValue(int ident, int bagEntryId, TypedValue outValue,

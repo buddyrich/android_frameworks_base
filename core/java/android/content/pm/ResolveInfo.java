@@ -113,12 +113,7 @@ public class ResolveInfo implements Parcelable {
      * containing the resolved component.
      */
     public String resolvePackageName;
-
-    /**
-     * @hide Target comes from system process?
-     */
-    public boolean system;
-
+    
     /**
      * Retrieve the current textual label associated with this resolution.  This
      * will call back on the given PackageManager to load the label from
@@ -170,7 +165,7 @@ public class ResolveInfo implements Parcelable {
     public Drawable loadIcon(PackageManager pm) {
         Drawable dr;
         if (resolvePackageName != null && icon != 0) {
-            dr = pm.getDrawable(resolvePackageName, icon, null);
+            dr = android.app.MiuiThemeHelper.getDrawable(pm, resolvePackageName, icon, null, activityInfo != null ? activityInfo : serviceInfo, android.app.MiuiThemeHelper.isCustomizedIcon(filter)); // MIUIHOOK
             if (dr != null) {
                 return dr;
             }
@@ -178,7 +173,7 @@ public class ResolveInfo implements Parcelable {
         ComponentInfo ci = activityInfo != null ? activityInfo : serviceInfo;
         ApplicationInfo ai = ci.applicationInfo;
         if (icon != 0) {
-            dr = pm.getDrawable(ci.packageName, icon, ai);
+            dr = android.app.MiuiThemeHelper.getDrawable(pm, ci.packageName, icon, ai, ci, android.app.MiuiThemeHelper.isCustomizedIcon(filter)); // MIUIHOOK
             if (dr != null) {
                 return dr;
             }
@@ -266,7 +261,6 @@ public class ResolveInfo implements Parcelable {
         TextUtils.writeToParcel(nonLocalizedLabel, dest, parcelableFlags);
         dest.writeInt(icon);
         dest.writeString(resolvePackageName);
-        dest.writeInt(system ? 1 : 0);
     }
 
     public static final Creator<ResolveInfo> CREATOR
@@ -306,7 +300,6 @@ public class ResolveInfo implements Parcelable {
                 = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(source);
         icon = source.readInt();
         resolvePackageName = source.readString();
-        system = source.readInt() != 0;
     }
     
     public static class DisplayNameComparator

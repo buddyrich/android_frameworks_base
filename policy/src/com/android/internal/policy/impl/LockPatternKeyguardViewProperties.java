@@ -45,7 +45,7 @@ public class LockPatternKeyguardViewProperties implements KeyguardViewProperties
     public KeyguardViewBase createKeyguardView(Context context,
             KeyguardUpdateMonitor updateMonitor,
             KeyguardWindowController controller) {
-        return new LockPatternKeyguardView(context, updateMonitor,
+        return MiuiClassFactory.createKeyguardView(context, updateMonitor,
                 mLockPatternUtils, controller);
     }
 
@@ -55,10 +55,8 @@ public class LockPatternKeyguardViewProperties implements KeyguardViewProperties
 
     private boolean isSimPinSecure() {
         final IccCard.State simState = mUpdateMonitor.getSimState();
-        return (simState == IccCard.State.PIN_REQUIRED
-                || simState == IccCard.State.PUK_REQUIRED
-                || simState == IccCard.State.ABSENT
-                || simState == IccCard.State.PERM_DISABLED);
+        return (simState == IccCard.State.PIN_REQUIRED || simState == IccCard.State.PUK_REQUIRED
+            || simState == IccCard.State.ABSENT);
     }
 
 }

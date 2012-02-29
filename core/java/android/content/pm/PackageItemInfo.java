@@ -137,7 +137,7 @@ public class PackageItemInfo {
      */
     public Drawable loadIcon(PackageManager pm) {
         if (icon != 0) {
-            Drawable dr = pm.getDrawable(packageName, icon, getApplicationInfo());
+            Drawable dr = android.app.MiuiThemeHelper.getDrawable(pm, packageName, icon, getApplicationInfo(), name); // MIUIHOOK
             if (dr != null) {
                 return dr;
             }

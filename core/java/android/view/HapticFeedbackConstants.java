@@ -34,7 +34,13 @@ public class HapticFeedbackConstants {
      * The user has pressed on a virtual on-screen key.
      */
     public static final int VIRTUAL_KEY = 1;
-    
+
+    /**
+     * The user has released a virtual on-screen key
+     * @hide for @miui
+     */
+    public static final int VIRTUAL_RELEASED = 2;
+
     /**
      * The user has pressed a soft keyboard key.
      */
