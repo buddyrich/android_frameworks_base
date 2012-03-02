@@ -2414,7 +2414,7 @@ public final class Settings {
          *
          * @hide
          */
-        public static final String NAVIGATION_BAR_BUTTONS_HIDE = "navigation_bar_buttons_hide";
+        public static final String NAVIGATION_BAR_BUTTONS_SHOW = "navigation_bar_buttons_show";
         /**
          * whether volume keys wake the screen. boolean value
          * 
@@ -2675,11 +2675,6 @@ public final class Settings {
          * @hide
          */
         public static final String STATUSBAR_HIDE_SIGNAL_BARS = "statusbar_hide_signal_bars";
-
-        /**
-         * @hide
-         */
-        public static final String NAVIGATION_BAR_SHOW = "navigation_bar_show";
 
         /**
          * @hide
