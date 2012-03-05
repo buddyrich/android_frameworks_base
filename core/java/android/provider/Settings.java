@@ -2322,6 +2322,21 @@ public final class Settings {
         /**
          * @hide
          */
+        public static final String STATUSBAR_CLOCK_WEEKDAY = "statusbar_clock_weekday";
+
+        /**
+         * @hide
+         */
+        public static final String STATUS_BAR_TRANSPARENCY = "status_bar_transparency";
+
+        /**
+         * @hide
+         */
+        public static final String STATUS_BAR_LAYOUT = "status_bar_layout";
+
+        /**
+         * @hide
+         */
         public static final String POWER_DIALOG_SHOW_POWER_SAVER = "power_dialog_show_power_saver";
 
         /**
@@ -2414,7 +2429,7 @@ public final class Settings {
          *
          * @hide
          */
-        public static final String NAVIGATION_BAR_BUTTONS_HIDE = "navigation_bar_buttons_hide";
+        public static final String NAVIGATION_BAR_BUTTONS_SHOW = "navigation_bar_buttons_show";
         /**
          * whether volume keys wake the screen. boolean value
          * 
@@ -2675,11 +2690,6 @@ public final class Settings {
          * @hide
          */
         public static final String STATUSBAR_HIDE_SIGNAL_BARS = "statusbar_hide_signal_bars";
-
-        /**
-         * @hide
-         */
-        public static final String NAVIGATION_BAR_SHOW = "navigation_bar_show";
 
         /**
          * @hide
