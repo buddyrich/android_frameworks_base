@@ -16,10 +16,13 @@
 
 package com.android.internal.telephony.cdma;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
 import android.net.TrafficStats;
 import android.os.AsyncResult;
 import android.os.Message;
@@ -43,6 +46,8 @@ import com.android.internal.telephony.EventLogTags;
 import com.android.internal.telephony.RetryManager;
 import com.android.internal.telephony.Phone;
 import com.android.internal.util.AsyncChannel;
+
+import miui.net.FirewallManager;
 
 import java.util.ArrayList;
 
@@ -831,10 +836,26 @@ _L5:
         }
     }
 
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    private void notifyFirewallDataSetupComplete() {
+        DataConnectionAc current = null;
+        for (DataConnectionAc dcac : mDataConnectionAsyncChannels.values()) {
+            if (dcac.getApnSettingSync().equals(mActiveApn)) {
+                current = dcac;
+                break;
+            }
+        }
+
+        FirewallManager.getInstance().onDataConnected(ConnectivityManager.TYPE_MOBILE,
+                FirewallManager.encodeApnSetting(mActiveApn),
+                current.getLinkPropertiesSync().getInterfaceName());
+    }
+
     /**
      * @override com.android.internal.telephony.DataConnectionTracker
      */
     @Override
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     protected void onDataSetupComplete(AsyncResult ar) {
         String reason = null;
         if (ar.userObj instanceof String) {
@@ -842,6 +863,8 @@ _L5:
         }
 
         if (isDataSetupCompleteOk(ar)) {
+            notifyFirewallDataSetupComplete();
+
             // Everything is setup
             notifyDefaultData(reason);
         } else {
@@ -861,6 +884,7 @@ _L5:
      * Called when EVENT_DISCONNECT_DONE is received.
      */
     @Override
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     protected void onDisconnectDone(int connId, AsyncResult ar) {
         if(DBG) log("EVENT_DISCONNECT_DONE connId=" + connId);
         String reason = null;
@@ -868,6 +892,9 @@ _L5:
             reason = (String) ar.userObj;
         }
         setState(State.IDLE);
+
+        FirewallManager.getInstance().onDataDisconnected(ConnectivityManager.TYPE_MOBILE,
+                FirewallManager.encodeApnSetting(mActiveApn));
 
         // Since the pending request to turn off or restart radio will be processed here,
         // remove the pending event to restart radio from the message queue.

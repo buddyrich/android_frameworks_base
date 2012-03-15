@@ -29,6 +29,8 @@ import com.android.server.wm.WindowManagerService;
 
 import dalvik.system.Zygote;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.ActivityManagerNative;
@@ -1477,12 +1479,15 @@ public final class ActivityManagerService extends ActivityManagerNative
         }
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private ActivityManagerService() {
         Slog.i(TAG, "Memory class: " + ActivityManager.staticGetMemoryClass());
         
         File dataDir = Environment.getDataDirectory();
         File systemDir = new File(dataDir, "system");
         systemDir.mkdirs();
+
+        miui.os.Environment.init(systemDir, dataDir); // MIUIHOOK
         mBatteryStatsService = new BatteryStatsService(new File(
                 systemDir, "batterystats.bin").toString());
         mBatteryStatsService.getActiveStatistics().readLocked();

@@ -16,6 +16,9 @@
 
 package android.view;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
+
 /**
  * Constants to be used to perform haptic feedback effects via
  * {@link View#performHapticFeedback(int)} 
@@ -34,7 +37,14 @@ public class HapticFeedbackConstants {
      * The user has pressed on a virtual on-screen key.
      */
     public static final int VIRTUAL_KEY = 1;
-    
+
+    /**
+     * The user has released a virtual on-screen key
+     * @hide
+     */
+    @MiuiHook(MiuiHookType.NEW_FIELD)
+    public static final int VIRTUAL_RELEASED = 2;
+
     /**
      * The user has pressed a soft keyboard key.
      */
@@ -65,4 +75,13 @@ public class HapticFeedbackConstants {
      * for whether to perform haptic feedback, do it always.
      */
     public static final int FLAG_IGNORE_GLOBAL_SETTING = 0x0002;
+
+    /**
+     * Flag for {@link View#performHapticFeedback(int, int)
+     * View.performHapticFeedback(int, int)}: Perform haptic feedback only
+     * when setting is set explicitly in code
+     * @hide
+     */
+    @MiuiHook(MiuiHookType.NEW_FIELD)
+    public static final int FLAG_WHEN_ENABLED_EXPLICITLY = 0x0004;
 }

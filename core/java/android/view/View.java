@@ -2740,6 +2740,7 @@ public class View implements Drawable.Callback, Drawable.Callback2, KeyEvent.Cal
      *        from the current theme, or an explicit style resource.
      * @see #View(Context, AttributeSet)
      */
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     public View(Context context, AttributeSet attrs, int defStyle) {
         this(context);
 
@@ -2933,6 +2934,8 @@ public class View implements Drawable.Callback, Drawable.Callback2, KeyEvent.Cal
                     }
                     break;
                 case com.android.internal.R.styleable.View_hapticFeedbackEnabled:
+                    mHapticEnabledExplicitly = a.getBoolean(attr, false);
+
                     if (!a.getBoolean(attr, true)) {
                         viewFlagValues &= ~HAPTIC_FEEDBACK_ENABLED;
                         viewFlagMasks |= HAPTIC_FEEDBACK_ENABLED;
@@ -4735,6 +4738,7 @@ public class View implements Drawable.Callback, Drawable.Callback2, KeyEvent.Cal
      */
     public void setHapticFeedbackEnabled(boolean hapticFeedbackEnabled) {
         setFlags(hapticFeedbackEnabled ? HAPTIC_FEEDBACK_ENABLED: 0, HAPTIC_FEEDBACK_ENABLED);
+        mHapticEnabledExplicitly = hapticFeedbackEnabled;
     }
 
     /**
@@ -6434,6 +6438,7 @@ public class View implements Drawable.Callback, Drawable.Callback2, KeyEvent.Cal
      * @param event The motion event.
      * @return True if the event was handled, false otherwise.
      */
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     public boolean onTouchEvent(MotionEvent event) {
         final int viewFlags = mViewFlags;
 
@@ -6491,6 +6496,8 @@ public class View implements Drawable.Callback, Drawable.Callback2, KeyEvent.Cal
                                 if (!post(mPerformClick)) {
                                     performClick();
                                 }
+                                performHapticFeedback(HapticFeedbackConstants.VIRTUAL_RELEASED,
+                                        HapticFeedbackConstants.FLAG_WHEN_ENABLED_EXPLICITLY);
                             }
                         }
 
@@ -6532,7 +6539,10 @@ public class View implements Drawable.Callback, Drawable.Callback2, KeyEvent.Cal
                         mPrivateFlags |= PRESSED;
                         refreshDrawableState();
                         checkForLongClick(0);
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY,
+                                HapticFeedbackConstants.FLAG_WHEN_ENABLED_EXPLICITLY);
                     }
+
                     break;
 
                 case MotionEvent.ACTION_CANCEL:
@@ -13103,6 +13113,9 @@ public class View implements Drawable.Callback, Drawable.Callback2, KeyEvent.Cal
         mAttachInfo.mRootCallbacks.playSoundEffect(soundConstant);
     }
 
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.NEW_FIELD)
+    boolean mHapticEnabledExplicitly;
+
     /**
      * BZZZTT!!1!
      *
@@ -13131,10 +13144,17 @@ public class View implements Drawable.Callback, Drawable.Callback2, KeyEvent.Cal
      * {@link HapticFeedbackConstants}
      * @param flags Additional flags as per {@link HapticFeedbackConstants}.
      */
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     public boolean performHapticFeedback(int feedbackConstant, int flags) {
         if (mAttachInfo == null) {
             return false;
         }
+
+        if (((flags & HapticFeedbackConstants.FLAG_WHEN_ENABLED_EXPLICITLY) != 0)
+                && !mHapticEnabledExplicitly) {
+            return false;
+        }
+
         //noinspection SimplifiableIfStatement
         if ((flags & HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING) == 0
                 && !isHapticFeedbackEnabled()) {

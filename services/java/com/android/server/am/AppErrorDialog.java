@@ -18,6 +18,8 @@ package com.android.server.am;
 
 import static android.view.WindowManager.LayoutParams.FLAG_SYSTEM_ERROR;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Resources;
@@ -39,6 +41,7 @@ class AppErrorDialog extends BaseErrorDialog {
     // 5-minute timeout, then we automatically dismiss the crash dialog
     static final long DISMISS_TIMEOUT = 1000 * 60 * 5;
     
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public AppErrorDialog(Context context, AppErrorResult result, ProcessRecord app) {
         super(context);
         
@@ -65,11 +68,10 @@ class AppErrorDialog extends BaseErrorDialog {
                 res.getText(com.android.internal.R.string.force_close),
                 mHandler.obtainMessage(FORCE_QUIT));
 
-        if (app.errorReportReceiver != null) {
-            setButton(DialogInterface.BUTTON_NEGATIVE,
-                    res.getText(com.android.internal.R.string.report),
-                    mHandler.obtainMessage(FORCE_QUIT_AND_REPORT));
-        }
+        // MiuiHook: always show report button
+        setButton(DialogInterface.BUTTON_NEGATIVE,
+                res.getText(com.android.internal.R.string.report) + " MIUI",
+                mHandler.obtainMessage(FORCE_QUIT_AND_REPORT));
 
         setTitle(res.getText(com.android.internal.R.string.aerr_title));
         getWindow().addFlags(FLAG_SYSTEM_ERROR);
@@ -84,6 +86,7 @@ class AppErrorDialog extends BaseErrorDialog {
                 DISMISS_TIMEOUT);
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private final Handler mHandler = new Handler() {
         public void handleMessage(Message msg) {
             synchronized (mProc) {
@@ -92,6 +95,11 @@ class AppErrorDialog extends BaseErrorDialog {
                 }
             }
             mResult.set(msg.what);
+
+            // MiuiHook: send out error report
+            if (msg.what == FORCE_QUIT_AND_REPORT && mProc != null && mProc.crashingReport != null) {
+                MiuiBugReport.sendMiuiErrorReport(getContext(), mProc);
+            }
 
             // If this is a timeout we won't be automatically closed, so go
             // ahead and explicitly dismiss ourselves just in case.

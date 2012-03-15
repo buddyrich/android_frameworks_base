@@ -16,6 +16,8 @@
 
 package com.android.server;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.StatusBarManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;

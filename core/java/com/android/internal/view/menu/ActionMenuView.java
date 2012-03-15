@@ -357,6 +357,7 @@ public class ActionMenuView extends LinearLayout implements MenuBuilder.ItemInvo
     }
 
     @Override
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         if (!mFormatItems) {
             super.onLayout(changed, left, top, right, bottom);
@@ -409,10 +410,16 @@ public class ActionMenuView extends LinearLayout implements MenuBuilder.ItemInvo
             final View v = getChildAt(0);
             final int width = v.getMeasuredWidth();
             final int height = v.getMeasuredHeight();
-            final int midHorizontal = (right - left) / 2;
-            final int l = midHorizontal - width / 2;
             final int t = midVertical - height / 2;
-            v.layout(l, t, l + width, t + height);
+            if ((((LayoutParams)v.getLayoutParams()).gravity & Gravity.RIGHT) != 0) {
+                v.layout(right - width, t, right, t + height);
+            } else if ((((LayoutParams)v.getLayoutParams()).gravity & Gravity.LEFT) != 0) {
+                v.layout(left, t, left + width, t + height);
+            } else {
+                final int midHorizontal = (right - left) / 2;
+                final int l = midHorizontal - width / 2;
+                v.layout(l, t, l + width, t + height);
+            }
             return;
         }
 

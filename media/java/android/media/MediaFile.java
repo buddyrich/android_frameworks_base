@@ -56,6 +56,11 @@ public class MediaFile {
     public static final int FILE_TYPE_IMY     = 13;
     private static final int FIRST_MIDI_FILE_TYPE = FILE_TYPE_MID;
     private static final int LAST_MIDI_FILE_TYPE = FILE_TYPE_IMY;
+
+    // FFMPEG support extra audio type
+    public static final int FILE_TYPE_APE     = 1001;
+    private static final int FIRST_FFMPEG_AUDIO_FILE_TYPE = FILE_TYPE_APE;
+    private static final int LAST_FFMPEG_AUDIO_FILE_TYPE = FILE_TYPE_APE;
    
     // Video file types
     public static final int FILE_TYPE_MP4     = 21;
@@ -176,9 +181,9 @@ public class MediaFile {
         addFileType("WAV", FILE_TYPE_WAV, "audio/x-wav", MtpConstants.FORMAT_WAV);
         addFileType("AMR", FILE_TYPE_AMR, "audio/amr");
         addFileType("AWB", FILE_TYPE_AWB, "audio/amr-wb");
-        if (isWMAEnabled()) {
-            addFileType("WMA", FILE_TYPE_WMA, "audio/x-ms-wma", MtpConstants.FORMAT_WMA);
-        }
+
+        addFileType("WMA", FILE_TYPE_WMA, "audio/x-ms-wma", MtpConstants.FORMAT_WMA);
+
         addFileType("OGG", FILE_TYPE_OGG, "application/ogg", MtpConstants.FORMAT_OGG);
         addFileType("OGA", FILE_TYPE_OGG, "application/ogg", MtpConstants.FORMAT_OGG);
         addFileType("AAC", FILE_TYPE_AAC, "audio/aac", MtpConstants.FORMAT_AAC);
@@ -194,7 +199,9 @@ public class MediaFile {
         addFileType("RTX", FILE_TYPE_MID, "audio/midi");
         addFileType("OTA", FILE_TYPE_MID, "audio/midi");
         addFileType("MXMF", FILE_TYPE_MID, "audio/midi");
-        
+
+        addFileType("APE", FILE_TYPE_APE, "audio/x-monkeys-audio");
+
         addFileType("MPEG", FILE_TYPE_MP4, "video/mpeg", MtpConstants.FORMAT_MPEG);
         addFileType("MPG", FILE_TYPE_MP4, "video/mpeg", MtpConstants.FORMAT_MPEG);
         addFileType("MP4", FILE_TYPE_MP4, "video/mp4", MtpConstants.FORMAT_MPEG);
@@ -248,7 +255,9 @@ public class MediaFile {
         return ((fileType >= FIRST_AUDIO_FILE_TYPE &&
                 fileType <= LAST_AUDIO_FILE_TYPE) ||
                 (fileType >= FIRST_MIDI_FILE_TYPE &&
-                fileType <= LAST_MIDI_FILE_TYPE));
+                fileType <= LAST_MIDI_FILE_TYPE) ||
+                (fileType >= FIRST_FFMPEG_AUDIO_FILE_TYPE &&
+                fileType <= LAST_FFMPEG_AUDIO_FILE_TYPE));
     }
 
     public static boolean isVideoFileType(int fileType) {

@@ -20,6 +20,8 @@ import com.android.internal.app.HeavyWeightSwitcherActivity;
 import com.android.internal.os.BatteryStatsImpl;
 import com.android.server.am.ActivityManagerService.PendingActivityLaunch;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AppGlobals;
@@ -4072,6 +4074,7 @@ final class ActivityStack {
      * for whatever reason.  Ensures the HistoryRecord is updated with the
      * correct configuration and all other bookkeeping is handled.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     final boolean ensureActivityConfigurationLocked(ActivityRecord r,
             int globalChanges) {
         if (mConfigWillChange) {
@@ -4134,6 +4137,7 @@ final class ActivityStack {
                     + ", newConfig=" + newConfig);
         }
         if ((changes&(~r.info.getRealConfigChanged())) != 0 || r.forceNewConfig) {
+            if (android.app.MiuiThemeHelper.needRestartActivity(r.info.packageName, changes, newConfig)) return true;
             // Aha, the activity isn't handling the change, so DIE DIE DIE.
             r.configChangeFlags |= changes;
             r.startFreezingScreenLocked(r.app, globalChanges);

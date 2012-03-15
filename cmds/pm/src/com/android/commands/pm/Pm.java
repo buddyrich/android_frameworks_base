@@ -18,6 +18,8 @@ package com.android.commands.pm;
 
 import com.android.internal.content.PackageHelper;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.ActivityManagerNative;
 import android.content.ComponentName;
 import android.content.pm.ApplicationInfo;
@@ -1044,6 +1046,7 @@ public final class Pm {
         }
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private Resources getResources(PackageItemInfo pii) {
         Resources res = mResourceCache.get(pii.packageName);
         if (res != null) return res;
@@ -1052,7 +1055,7 @@ public final class Pm {
             ApplicationInfo ai = mPm.getApplicationInfo(pii.packageName, 0);
             AssetManager am = new AssetManager();
             am.addAssetPath(ai.publicSourceDir);
-            res = new Resources(am, null, null);
+            res = android.content.res.MiuiClassFactory.newResources(am, null, null); // MIUIHOOK
             mResourceCache.put(pii.packageName, res);
             return res;
         } catch (RemoteException e) {

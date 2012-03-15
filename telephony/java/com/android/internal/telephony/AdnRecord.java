@@ -16,6 +16,8 @@
 
 package com.android.internal.telephony;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.telephony.PhoneNumberUtils;
@@ -199,6 +201,7 @@ public class AdnRecord implements Parcelable {
      * @return hex byte[recordSize] to be written to EF record
      *          return null for wrong format of dialing number or tag
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public byte[] buildAdnString(int recordSize) {
         byte[] bcdNumber;
         byte[] byteTag;
@@ -237,8 +240,7 @@ public class AdnRecord implements Parcelable {
                     = (byte) 0xFF; // Extension Record Id
 
             if (!TextUtils.isEmpty(alphaTag)) {
-                byteTag = GsmAlphabet.stringToGsm8BitPacked(alphaTag);
-                System.arraycopy(byteTag, 0, adnString, 0, byteTag.length);
+                MiuiAdnUtils.encodeAlphaTag(adnString, alphaTag, footerOffset);
             }
 
             return adnString;
@@ -283,7 +285,7 @@ public class AdnRecord implements Parcelable {
     private void
     parseRecord(byte[] record) {
         try {
-            alphaTag = IccUtils.adnStringFieldToStringKsc5601Support(
+            alphaTag = IccUtils.adnStringFieldToString(
                             record, 0, record.length - FOOTER_SIZE_BYTES);
 
             int footerOffset = record.length - FOOTER_SIZE_BYTES;

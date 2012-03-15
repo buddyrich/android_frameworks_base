@@ -83,6 +83,7 @@ import android.telephony.TelephonyManager;
 import android.content.ClipboardManager;
 import android.util.AndroidRuntimeException;
 import android.util.Log;
+import android.util.MiuiClassFactory;
 import android.view.ContextThemeWrapper;
 import android.view.WindowManagerImpl;
 import android.view.accessibility.AccessibilityManager;
@@ -90,6 +91,8 @@ import android.view.inputmethod.InputMethodManager;
 import android.view.textservice.TextServicesManager;
 import android.accounts.AccountManager;
 import android.accounts.IAccountManager;
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.admin.DevicePolicyManager;
 import com.android.internal.os.IDropBoxManagerService;
 
@@ -306,8 +309,9 @@ class ContextImpl extends Context {
                 }});
 
         registerService(DOWNLOAD_SERVICE, new ServiceFetcher() {
+                @MiuiHook(MiuiHookType.CHANGE_CODE)
                 public Object createService(ContextImpl ctx) {
-                    return new DownloadManager(ctx.getContentResolver(), ctx.getPackageName());
+                    return MiuiClassFactory.newDownloadManager(ctx.getContentResolver(), ctx.getPackageName());
                 }});
 
         registerService(NFC_SERVICE, new ServiceFetcher() {

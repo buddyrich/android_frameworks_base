@@ -16,6 +16,8 @@
 
 package android.content.pm;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.IntentFilter;
 import android.graphics.drawable.Drawable;
 import android.os.Parcel;
@@ -167,10 +169,11 @@ public class ResolveInfo implements Parcelable {
      * @return Returns a Drawable containing the resolution's icon.  If the
      * item does not have an icon, the default activity icon is returned.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public Drawable loadIcon(PackageManager pm) {
         Drawable dr;
         if (resolvePackageName != null && icon != 0) {
-            dr = pm.getDrawable(resolvePackageName, icon, null);
+            dr = loadDrawableFromTheme(pm, resolvePackageName, null); // MIUIHOOK
             if (dr != null) {
                 return dr;
             }
@@ -178,14 +181,20 @@ public class ResolveInfo implements Parcelable {
         ComponentInfo ci = activityInfo != null ? activityInfo : serviceInfo;
         ApplicationInfo ai = ci.applicationInfo;
         if (icon != 0) {
-            dr = pm.getDrawable(ci.packageName, icon, ai);
+            dr = loadDrawableFromTheme(pm, ci.packageName, ai); // MIUIHOOK
             if (dr != null) {
                 return dr;
             }
         }
         return ci.loadIcon(pm);
     }
-    
+
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    private Drawable loadDrawableFromTheme(PackageManager pm, String packageName, ApplicationInfo ai) {
+        ComponentInfo ci = activityInfo != null ? activityInfo : serviceInfo;
+        return android.app.MiuiThemeHelper.getDrawable(pm, packageName, icon, ai, ci, android.app.MiuiThemeHelper.isCustomizedIcon(filter));
+    }
+
     /**
      * Return the icon resource identifier to use for this match.  If the
      * match defines an icon, that is used; else if the activity defines

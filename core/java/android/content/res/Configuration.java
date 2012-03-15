@@ -16,12 +16,17 @@
 
 package android.content.res;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.pm.ActivityInfo;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.util.LocaleUtil;
 
 import java.util.Locale;
+
+import miui.content.pm.ExtraActivityInfo;
+import miui.content.res.ExtraConfiguration;
 
 /**
  * This class describes all device configuration information that can
@@ -34,6 +39,9 @@ import java.util.Locale;
  * <pre>Configuration config = getResources().getConfiguration();</pre>
  */
 public final class Configuration implements Parcelable, Comparable<Configuration> {
+    /** @hide */
+    @MiuiHook(MiuiHookType.NEW_FIELD)
+    public miui.content.res.ExtraConfiguration extraConfig;
     /**
      * Current user preference for the scaling factor for fonts, relative
      * to the base density scaling.
@@ -291,17 +299,22 @@ public final class Configuration implements Parcelable, Comparable<Configuration
      * Construct an invalid Configuration.  You must call {@link #setToDefaults}
      * for this object to be valid.  {@more}
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public Configuration() {
+        extraConfig = new miui.content.res.ExtraConfiguration(); // MIUIHOOK
         setToDefaults();
     }
 
     /**
      * Makes a deep copy suitable for modification.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public Configuration(Configuration o) {
+        extraConfig = new miui.content.res.ExtraConfiguration(); // MIUIHOOK
         setTo(o);
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public void setTo(Configuration o) {
         fontScale = o.fontScale;
         mcc = o.mcc;
@@ -327,8 +340,10 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         compatScreenHeightDp = o.compatScreenHeightDp;
         compatSmallestScreenWidthDp = o.compatSmallestScreenWidthDp;
         seq = o.seq;
+        extraConfig.setTo(o.extraConfig); // MIUIHOOK
     }
     
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public String toString() {
         StringBuilder sb = new StringBuilder(128);
         sb.append("{");
@@ -444,6 +459,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
             sb.append(" s.");
             sb.append(seq);
         }
+        sb.append(extraConfig.toString()); // MIUIHOOK
         sb.append('}');
         return sb.toString();
     }
@@ -451,6 +467,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
     /**
      * Set this object to the system defaults.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public void setToDefaults() {
         fontScale = 1;
         mcc = mnc = 0;
@@ -470,6 +487,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         smallestScreenWidthDp = compatSmallestScreenWidthDp = SMALLEST_SCREEN_WIDTH_DP_UNDEFINED;
         textLayoutDirection = LocaleUtil.TEXT_LAYOUT_DIRECTION_LTR_DO_NOT_USE;
         seq = 0;
+        extraConfig.setToDefaults(); // MIUIHOOK
     }
 
     /** {@hide} */
@@ -589,7 +607,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         if (delta.seq != 0) {
             seq = delta.seq;
         }
-        
+        changed |= extraConfig.updateFrom(delta.extraConfig); // MIUIHOOK
         return changed;
     }
 
@@ -685,7 +703,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
                 && smallestScreenWidthDp != delta.smallestScreenWidthDp) {
             changed |= ActivityInfo.CONFIG_SMALLEST_SCREEN_SIZE;
         }
-        
+        changed |= extraConfig.diff(delta.extraConfig); // MIUIHOOK
         return changed;
     }
 
@@ -700,8 +718,10 @@ public final class Configuration implements Parcelable, Comparable<Configuration
      * 
      * @return Return true if the resource needs to be loaded, else false.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public static boolean needNewResources(int configChanges, int interestingChanges) {
-        return (configChanges & (interestingChanges|ActivityInfo.CONFIG_FONT_SCALE)) != 0;
+        return (configChanges & (interestingChanges|ActivityInfo.CONFIG_FONT_SCALE)) != 0
+               || ExtraConfiguration.needNewResources(configChanges);
     }
     
     /**
@@ -740,6 +760,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         return 0;
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeFloat(fontScale);
         dest.writeInt(mcc);
@@ -774,8 +795,10 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         dest.writeInt(compatSmallestScreenWidthDp);
         dest.writeInt(textLayoutDirection);
         dest.writeInt(seq);
+        extraConfig.writeToParcel(dest, flags); // MIUIHOOK
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public void readFromParcel(Parcel source) {
         fontScale = source.readFloat();
         mcc = source.readInt();
@@ -802,6 +825,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         compatSmallestScreenWidthDp = source.readInt();
         textLayoutDirection = source.readInt();
         seq = source.readInt();
+        extraConfig.readFromParcel(source); // MIUIHOOK
     }
     
     public static final Parcelable.Creator<Configuration> CREATOR
@@ -818,10 +842,13 @@ public final class Configuration implements Parcelable, Comparable<Configuration
     /**
      * Construct this Configuration object, reading from the Parcel.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private Configuration(Parcel source) {
+        extraConfig = new miui.content.res.ExtraConfiguration(); // MIUIHOOK
         readFromParcel(source);
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public int compareTo(Configuration that) {
         int n;
         float a = this.fontScale;
@@ -868,6 +895,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         if (n != 0) return n;
         n = this.smallestScreenWidthDp - that.smallestScreenWidthDp;
         //if (n != 0) return n;
+        n = extraConfig.compareTo(that.extraConfig); // MIUIHOOK
         return n;
     }
 
@@ -885,6 +913,7 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         return false;
     }
     
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public int hashCode() {
         int result = 17;
         result = 31 * result + Float.floatToIntBits(fontScale);
@@ -903,6 +932,6 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         result = 31 * result + screenWidthDp;
         result = 31 * result + screenHeightDp;
         result = 31 * result + smallestScreenWidthDp;
-        return result;
+        return result + extraConfig.hashCode(); // MIUIHOOK
     }
 }

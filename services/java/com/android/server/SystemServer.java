@@ -17,6 +17,8 @@
 package com.android.server;
 
 import android.accounts.AccountManagerService;
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.ActivityManagerNative;
 import android.bluetooth.BluetoothAdapter;
 import android.content.ComponentName;
@@ -89,6 +91,7 @@ class ServerThread extends Thread {
         }
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     @Override
     public void run() {
         EventLog.writeEvent(EventLogTags.BOOT_PROGRESS_SYSTEM_RUN,
@@ -197,17 +200,15 @@ class ServerThread extends Thread {
                 Slog.e(TAG, "Failure starting Account Manager", e);
             }
 
-
             Slog.i(TAG, "Content Manager");
             ContentService.main(context,
                     factoryTest == SystemServer.FACTORY_TEST_LOW_LEVEL);
-
 
             Slog.i(TAG, "System Content Providers");
             ActivityManagerService.installSystemProviders();
 
             Slog.i(TAG, "Lights Service");
-            lights = new LightsService(context);
+            lights = new MiuiLightsService(context); //Miui Hook
 
             Slog.i(TAG, "Battery Service");
             battery = new BatteryService(context, lights);

@@ -48,6 +48,8 @@ import com.android.server.Watchdog;
 import com.android.server.am.BatteryStatsService;
 
 import android.Manifest;
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.ActivityManagerNative;
 import android.app.IActivityManager;
 import android.app.StatusBarManager;
@@ -418,6 +420,8 @@ public class WindowManagerService extends IWindowManager.Stub
     private DimAnimator mDimAnimator = null;
     Surface mBlurSurface;
     boolean mBlurShown;
+    @MiuiHook(MiuiHookType.NEW_FIELD)
+    com.miui.server.wm.RoundedCornersSurface mRoundedCorners;
     Watermark mWatermark;
     StrictModeFlash mStrictModeFlash;
     ScreenRotationAnimation mScreenRotationAnimation;
@@ -3428,6 +3432,7 @@ public class WindowManagerService extends IWindowManager.Stub
         return config;
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private Configuration updateOrientationFromAppTokensLocked(
             Configuration currentConfig, IBinder freezeThisOneIfNeeded) {
         Configuration config = null;
@@ -3450,6 +3455,7 @@ public class WindowManagerService extends IWindowManager.Stub
             // the value of the previous configuration.
             mTempConfiguration.setToDefaults();
             mTempConfiguration.fontScale = currentConfig.fontScale;
+            android.app.MiuiThemeHelper.copyExtraConfigurations(currentConfig, mTempConfiguration);
             if (computeNewConfigurationLocked(mTempConfiguration)) {
                 if (currentConfig.diff(mTempConfiguration) != 0) {
                     mWaitingForConfig = true;
@@ -7540,7 +7546,21 @@ public class WindowManagerService extends IWindowManager.Stub
         }
     }
 
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    private void createRoundCorners(int dw, int dh) {
+        if (mRoundedCorners == null) {
+            mRoundedCorners = new com.miui.server.wm.RoundedCornersSurface(mContext, mFxSession,
+                    mPolicy.windowTypeToLayerLw(WindowManager.LayoutParams.TYPE_STATUS_BAR)
+                            * TYPE_LAYER_MULTIPLIER + TYPE_LAYER_OFFSET,
+                    mInitialDisplayWidth, mInitialDisplayHeight);
+        }
+        if (mRoundedCorners != null) {
+            mRoundedCorners.positionSurface(dw, dh);
+        }
+    }
+
     // "Something has changed!  Let's make it correct now."
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private final void performLayoutAndPlaceSurfacesLockedInner(
             boolean recoveringMemory) {
         if (mDisplay == null) {
@@ -7592,9 +7612,12 @@ public class WindowManagerService extends IWindowManager.Stub
 
         Surface.openTransaction();
 
+        createRoundCorners(dw, dh); // MIUIHOOK
+
         if (createWatermark) {
             createWatermark();
         }
+
         if (mWatermark != null) {
             mWatermark.positionSurface(dw, dh);
         }
@@ -8690,6 +8713,8 @@ public class WindowManagerService extends IWindowManager.Stub
 
         if (SHOW_LIGHT_TRANSACTIONS) Slog.i(TAG,
                 "<<< CLOSE TRANSACTION performLayoutAndPlaceSurfaces");
+
+        mRoundedCorners.drawIfNeeded();
 
         if (mWatermark != null) {
             mWatermark.drawIfNeeded();

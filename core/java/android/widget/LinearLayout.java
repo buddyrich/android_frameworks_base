@@ -326,6 +326,7 @@ public class LinearLayout extends ViewGroup {
         }
     }
 
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     void drawDividersHorizontal(Canvas canvas) {
         final int count = getVirtualChildCount();
         for (int i = 0; i < count; i++) {
@@ -334,7 +335,7 @@ public class LinearLayout extends ViewGroup {
             if (child != null && child.getVisibility() != GONE) {
                 if (hasDividerBeforeChildAt(i)) {
                     final LayoutParams lp = (LayoutParams) child.getLayoutParams();
-                    final int left = child.getLeft() - lp.leftMargin;
+                    final int left = child.getLeft() - lp.leftMargin - 1;
                     drawVerticalDivider(canvas, left);
                 }
             }

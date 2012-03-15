@@ -17,6 +17,8 @@
 package android.graphics.drawable;
 
 import android.graphics.*;
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
@@ -159,12 +161,15 @@ public class NinePatchDrawable extends Drawable {
         }
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private void computeBitmapSize() {
         final int sdensity = mNinePatch.getDensity();
         final int tdensity = mTargetDensity;
         if (sdensity == tdensity) {
             mBitmapWidth = mNinePatch.getWidth();
             mBitmapHeight = mNinePatch.getHeight();
+            // fix bug: should reset padding to original.
+            mPadding = mNinePatchState.mPadding;
         } else {
             mBitmapWidth = Bitmap.scaleFromDensity(mNinePatch.getWidth(),
                     sdensity, tdensity);

@@ -39,6 +39,8 @@ import com.android.internal.widget.ActionBarContainer;
 import com.android.internal.widget.ActionBarContextView;
 import com.android.internal.widget.ActionBarView;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
@@ -504,6 +506,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         }
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private void openPanel(PanelFeatureState st, KeyEvent event) {
         // System.out.println("Open panel: isOpen=" + st.isOpen);
 
@@ -618,9 +621,26 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         }
 
         lp.windowAnimations = st.windowAnimations;
-        
+        handleIcsAppLayoutParams(wm, lp);
+
         wm.addView(st.decorView, lp);
         // Log.v(TAG, "Adding main menu to window manager.");
+    }
+
+    @MiuiHook(MiuiHook.MiuiHookType.NEW_METHOD)
+    private void handleIcsAppLayoutParams(WindowManager wm, WindowManager.LayoutParams lp) {
+        int height = WRAP_CONTENT;
+        boolean isIcsApp = getContext().getApplicationInfo().targetSdkVersion >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH;
+        if (isIcsApp) {
+            int rotation = wm.getDefaultDisplay().getRotation();
+            if (rotation != android.view.Surface.ROTATION_0
+                    && rotation != android.view.Surface.ROTATION_180) {
+                height = MATCH_PARENT;
+            }
+            lp.height = height;
+            lp.flags |= WindowManager.LayoutParams.FLAG_DIM_BEHIND;
+            lp.dimAmount = 0.7f;
+        }
     }
 
     @Override
@@ -1746,7 +1766,13 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
         }
     }
 
-    private final class DecorView extends FrameLayout implements RootViewSurfaceTaker {
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
+    protected boolean handleCameraKeyEvent(DecorView decor, KeyEvent event, int featureId) {
+        return false;
+    }
+
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
+    final class DecorView extends FrameLayout implements RootViewSurfaceTaker {
         /* package */int mDefaultOpacity = PixelFormat.OPAQUE;
 
         /** The feature ID of the panel, or -1 if this is the application's DecorView */
@@ -1776,6 +1802,7 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
             mFeatureId = featureId;
         }
 
+        @MiuiHook(MiuiHookType.CHANGE_CODE)
         @Override
         public boolean dispatchKeyEvent(KeyEvent event) {
             final int keyCode = event.getKeyCode();
@@ -1806,6 +1833,11 @@ public class PhoneWindow extends Window implements MenuBuilder.Callback {
                 final boolean handled = cb != null && mFeatureId < 0 ? cb.dispatchKeyEvent(event)
                         : super.dispatchKeyEvent(event);
                 if (handled) {
+                    return true;
+                }
+
+                // MIUI Hook
+                if (PhoneWindow.this.handleCameraKeyEvent(this, event, mFeatureId)) {
                     return true;
                 }
             }

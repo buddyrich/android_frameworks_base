@@ -16,6 +16,8 @@
 
 package android.app;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.Intent;
@@ -726,7 +728,18 @@ final class ApplicationPackageManager extends PackageManager {
         mPM = pm;
     }
 
-    private Drawable getCachedIcon(ResourceName name) {
+    @Override
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    public void setAccessControl(String packageName, int flag) {
+        try {
+             mPM.setAccessControl(packageName, flag);
+        } catch (RemoteException e) {
+            // Should never happen!
+        }
+    }
+
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    static Drawable getCachedIcon(ResourceName name) {
         synchronized (sSync) {
             WeakReference<Drawable.ConstantState> wr = sIconCache.get(name);
             if (DEBUG_ICONS) Log.v(TAG, "Get cached weak drawable ref for "
@@ -752,7 +765,8 @@ final class ApplicationPackageManager extends PackageManager {
         return null;
     }
 
-    private void putCachedIcon(ResourceName name, Drawable dr) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    static void putCachedIcon(ResourceName name, Drawable dr) {
         synchronized (sSync) {
             sIconCache.put(name, new WeakReference<Drawable.ConstantState>(dr.getConstantState()));
             if (DEBUG_ICONS) Log.v(TAG, "Added cached drawable state for " + name + ": " + dr);
@@ -803,7 +817,8 @@ final class ApplicationPackageManager extends PackageManager {
         }
     }
 
-    private static final class ResourceName {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    static final class ResourceName {
         final String packageName;
         final int iconId;
 

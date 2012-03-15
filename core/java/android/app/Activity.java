@@ -16,9 +16,12 @@
 
 package android.app;
 
+import miui.net.FirewallManager;
 import com.android.internal.app.ActionBarImpl;
 import com.android.internal.policy.PolicyManager;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.ComponentCallbacks2;
 import android.content.ComponentName;
 import android.content.ContentResolver;
@@ -1053,9 +1056,12 @@ public class Activity extends ContextThemeWrapper
      * @see #onPostResume
      * @see #onPause
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     protected void onResume() {
         getApplication().dispatchActivityResumed(this);
         mCalled = true;
+        FirewallManager.checkAccessControl(mParent, getContentResolver(), getPackageName(), getPackageManager(),
+                mMainThread.getApplicationThread(), mToken, mEmbeddedID);
     }
 
     /**

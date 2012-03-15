@@ -16,8 +16,11 @@
 
 package com.android.internal.policy.impl;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.Activity;
 import android.app.ActivityManagerNative;
+import android.app.AlertDialog;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.app.IActivityManager;
 import android.app.IUiModeManager;
@@ -40,6 +43,7 @@ import android.database.ContentObserver;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -144,7 +148,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+
 import java.util.List;
+import miui.content.ExtraIntent;
 
 /**
  * WindowManagerPolicy implementation for the Android phone UI.  This
@@ -298,7 +304,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
     WindowState mKeyguard = null;
     KeyguardViewMediator mKeyguardMediator;
-    GlobalActions mGlobalActions;
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
+    MiuiGlobalActions mGlobalActions;
     volatile boolean mPowerKeyHandled; // accessed from input reader and handler thread
     boolean mPendingPowerKeyUpCanceled;
     Handler mHandler;
@@ -610,7 +617,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         }
     }
 
-    private boolean interceptPowerKeyUp(boolean canceled) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    boolean interceptPowerKeyUp(boolean canceled) {
         if (!mPowerKeyHandled) {
             mHandler.removeCallbacks(mPowerLongPress);
             return !canceled;
@@ -692,7 +700,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         mHandler.removeCallbacks(mScreenshotChordLongPress);
     }
 
-    private final Runnable mPowerLongPress = new Runnable() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    Runnable mPowerLongPress = new Runnable() {
         public void run() {
             // The context isn't read
             if (mLongPressOnPowerBehavior < 0) {
@@ -718,7 +727,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         }
     };
 
-    private final Runnable mScreenshotChordLongPress = new Runnable() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    final Runnable mScreenshotChordLongPress = new Runnable() {
         public void run() {
             takeScreenshot();
         }
@@ -752,9 +762,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         }
     };
 
+    @MiuiHook(MiuiHook.MiuiHookType.CHANGE_CODE)
     void showGlobalActionsDialog() {
         if (mGlobalActions == null) {
-            mGlobalActions = new GlobalActions(mContext);
+            mGlobalActions = new MiuiGlobalActions(mContext);
         }
         final boolean keyguardShowing = mKeyguardMediator.isShowingAndNotHidden();
         mGlobalActions.showDialog(keyguardShowing, isDeviceProvisioned());
@@ -846,6 +857,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     }
 
     /** {@inheritDoc} */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public void init(Context context, IWindowManager windowManager,
             WindowManagerFuncs windowManagerFuncs,
             LocalPowerManager powerManager) {
@@ -853,7 +865,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         mWindowManager = windowManager;
         mWindowManagerFuncs = windowManagerFuncs;
         mPowerManager = powerManager;
-        mKeyguardMediator = new KeyguardViewMediator(context, this, powerManager);
+        mKeyguardMediator = MiuiClassFactory.createKeyguardViewMediator(context, this, powerManager);
         mHandler = new Handler();
         mOrientationListener = new MyOrientationListener(mContext);
         try {
@@ -2476,6 +2488,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     public int finishAnimationLw() {
         int changes = 0;
         boolean topIsFullscreen = false;
+
         final WindowManager.LayoutParams lp = (mTopFullscreenOpaqueWindowState != null)
                 ? mTopFullscreenOpaqueWindowState.getAttrs()
                 : null;
@@ -2809,10 +2822,11 @@ public class PhoneWindowManager implements WindowManagerPolicy {
 
     /** {@inheritDoc} */
     @Override
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public int interceptKeyBeforeQueueing(KeyEvent event, int policyFlags, boolean isScreenOn) {
         final boolean down = event.getAction() == KeyEvent.ACTION_DOWN;
         final boolean canceled = event.isCanceled();
-        int keyCode = event.getKeyCode();
+        final int keyCode = event.getKeyCode();
 
         final boolean isInjected = (policyFlags & WindowManagerPolicy.FLAG_INJECTED) != 0;
 
@@ -2834,9 +2848,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                   + " screenIsOn=" + isScreenOn + " keyguardActive=" + keyguardActive);
         }
 
-        if (down && (policyFlags & WindowManagerPolicy.FLAG_VIRTUAL) != 0
-                && event.getRepeatCount() == 0) {
-            performHapticFeedbackLw(null, HapticFeedbackConstants.VIRTUAL_KEY, false);
+        if (((policyFlags & WindowManagerPolicy.FLAG_VIRTUAL) != 0) && (event.getRepeatCount() == 0)) {
+            performHapticFeedbackLw(null,
+                    down ? HapticFeedbackConstants.VIRTUAL_KEY : HapticFeedbackConstants.VIRTUAL_RELEASED,
+                    false);
         }
 
         // Basic policy based on screen state and keyguard.
@@ -3037,6 +3052,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                         result = (result & ~ACTION_POKE_USER_ACTIVITY) | ACTION_GO_TO_SLEEP;
                     }
                     mPendingPowerKeyUpCanceled = false;
+                    if (mContext != null) {
+                        mContext.sendBroadcast(new Intent(ExtraIntent.ACTION_KEYCODE_POWER_UP));
+                    }
                 }
                 break;
             }
@@ -3560,9 +3578,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     /** {@inheritDoc} */
     public void showBootMessage(final CharSequence msg, final boolean always) {
         mHandler.post(new Runnable() {
+            @MiuiHook(MiuiHookType.CHANGE_CODE)
             @Override public void run() {
                 if (mBootMsgDialog == null) {
-                    mBootMsgDialog = new ProgressDialog(mContext) {
+                    mBootMsgDialog = new ProgressDialog(mContext, AlertDialog.THEME_HOLO_LIGHT) {
                         // This dialog will consume all events coming in to
                         // it, to avoid it trying to do things too early in boot.
                         @Override public boolean dispatchKeyEvent(KeyEvent event) {

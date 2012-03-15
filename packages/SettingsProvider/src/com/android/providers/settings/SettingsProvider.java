@@ -21,6 +21,8 @@ import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.backup.BackupManager;
 import android.content.ContentProvider;
 import android.content.ContentUris;
@@ -616,6 +618,7 @@ public class SettingsProvider extends ContentProvider {
         return count;
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
 
@@ -636,7 +639,7 @@ public class SettingsProvider extends ContentProvider {
                 // Only proxy the openFile call to drm or media providers
                 String authority = soundUri.getAuthority();
                 boolean isDrmAuthority = authority.equals(DrmStore.AUTHORITY);
-                if (isDrmAuthority || authority.equals(MediaStore.AUTHORITY)) {
+                if (isDrmAuthority || authority.equals(MediaStore.AUTHORITY) || android.media.ExtraRingtoneManager.isExtraCases(soundUri)) { // MIUIHOOK
 
                     if (isDrmAuthority) {
                         try {
@@ -647,6 +650,8 @@ public class SettingsProvider extends ContentProvider {
                         } catch (SecurityException e) {
                             throw new FileNotFoundException(e.getMessage());
                         }
+                    } else { // MIUIHOOK
+                        soundUri = android.media.ExtraRingtoneManager.getUriForExtraCases(soundUri, ringtoneType); // MIUIHOOK
                     }
 
                     return context.getContentResolver().openFileDescriptor(soundUri, mode);
@@ -657,6 +662,7 @@ public class SettingsProvider extends ContentProvider {
         return super.openFile(uri, mode);
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     @Override
     public AssetFileDescriptor openAssetFile(Uri uri, String mode) throws FileNotFoundException {
 
@@ -677,7 +683,7 @@ public class SettingsProvider extends ContentProvider {
                 // Only proxy the openFile call to drm or media providers
                 String authority = soundUri.getAuthority();
                 boolean isDrmAuthority = authority.equals(DrmStore.AUTHORITY);
-                if (isDrmAuthority || authority.equals(MediaStore.AUTHORITY)) {
+                if (isDrmAuthority || authority.equals(MediaStore.AUTHORITY) || android.media.ExtraRingtoneManager.isExtraCases(soundUri)) { // MIUIHOOK
 
                     if (isDrmAuthority) {
                         try {
@@ -688,6 +694,8 @@ public class SettingsProvider extends ContentProvider {
                         } catch (SecurityException e) {
                             throw new FileNotFoundException(e.getMessage());
                         }
+                    } else { // MIUIHOOK
+                        soundUri = android.media.ExtraRingtoneManager.getUriForExtraCases(soundUri, ringtoneType); // MIUIHOOK
                     }
 
                     ParcelFileDescriptor pfd = null;

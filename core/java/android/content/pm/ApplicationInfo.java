@@ -16,6 +16,8 @@
 
 package android.content.pm;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
@@ -289,6 +291,14 @@ public class ApplicationInfo extends PackageItemInfo implements Parcelable {
      * the stopped state.
      */
     public static final int FLAG_STOPPED = 1<<21;
+
+    /**
+     * Value for {@link #flags}: Set to true if the application ask for access control confirm.
+     * User has to input correct password to access to activities in this pkg.
+     * @hide for libra only
+     */
+    @MiuiHook(MiuiHookType.NEW_FIELD)
+    public static final int FLAG_ACCESS_CONTROL_PASSWORD = 1<<31;
 
     /**
      * Value for {@link #flags}: Set to true if the application has been

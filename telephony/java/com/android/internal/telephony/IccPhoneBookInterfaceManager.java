@@ -276,6 +276,14 @@ public abstract class IccPhoneBookInterfaceManager extends IIccPhoneBook.Stub {
         }
     }
 
+    public int getFreeAdn() {
+        return adnCache.getFreeAdn();
+    }
+
+    public int getAdnCapacity() {
+        return adnCache.getAdnCapacity();
+    }
+
     private int updateEfForIccType(int efid) {
         // Check if we are trying to read ADN records
         if (efid == IccConstants.EF_ADN) {

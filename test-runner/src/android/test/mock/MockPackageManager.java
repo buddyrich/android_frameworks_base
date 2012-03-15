@@ -534,6 +534,15 @@ public class MockPackageManager extends PackageManager {
      * @hide
      */
     @Override
+    public void setAccessControl(String packageName, int flag) {
+        throw new UnsupportedOperationException();
+    }
+
+
+    /**
+     * @hide
+     */
+    @Override
     public void updateUserFlags(int id, int flags) {
         throw new UnsupportedOperationException();
     }

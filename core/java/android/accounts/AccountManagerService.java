@@ -1971,13 +1971,14 @@ public class AccountManagerService
         return fromAuthenticator || hasExplicitGrants || inSystemImage;
     }
 
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     private boolean hasAuthenticatorUid(String accountType, int callingUid) {
         for (RegisteredServicesCache.ServiceInfo<AuthenticatorDescription> serviceInfo :
                 mAuthenticatorCache.getAllServices()) {
             if (serviceInfo.type.type.equals(accountType)) {
-                return (serviceInfo.uid == callingUid) ||
-                        (mPackageManager.checkSignatures(serviceInfo.uid, callingUid)
-                                == PackageManager.SIGNATURE_MATCH);
+                return (serviceInfo.uid == callingUid)
+                        || miui.content.pm.ExtraPackageManager.isTrustedAccountSignature(
+                                mPackageManager, accountType, serviceInfo.uid, callingUid);
             }
         }
         return false;

@@ -32,6 +32,8 @@ import android.accounts.AccountManagerCallback;
 import android.accounts.AccountManagerFuture;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.AlertDialog;
 import android.app.Profile;
 import android.app.ProfileManager;
@@ -100,14 +102,18 @@ public class LockPatternKeyguardView extends KeyguardViewBase implements Handler
     private final KeyguardUpdateMonitor mUpdateMonitor;
     private final KeyguardWindowController mWindowController;
 
-    private View mLockScreen;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    View mLockScreen;
+
     private View mUnlockScreen;
 
-    private volatile boolean mScreenOn = false;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    volatile boolean mScreenOn = false;
     private volatile boolean mWindowFocused = false;
     private boolean mEnableFallback = false; // assume no fallback UI until we know better
 
-    private boolean mShowLockBeforeUnlock = false;
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
+    private boolean mShowLockBeforeUnlock = true;
 
     // The following were added to support FaceLock
     private IFaceLockInterface mFaceLockService;
@@ -201,9 +207,11 @@ public class LockPatternKeyguardView extends KeyguardViewBase implements Handler
     }
 
     /**
+     *
      * The current mode.
      */
-    private Mode mMode = Mode.LockScreen;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    Mode mMode = Mode.LockScreen;
 
     /**
      * Keeps track of what mode the current unlock screen is (cached from most recent computation in
@@ -281,11 +289,27 @@ public class LockPatternKeyguardView extends KeyguardViewBase implements Handler
 
     private Parcelable mSavedState;
 
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    Configuration getConfiguration() {
+        return mConfiguration;
+    }
+
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    LockPatternUtils getLockPatternUtils() {
+        return mLockPatternUtils;
+    }
+
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    KeyguardUpdateMonitor getUpdateMonitor() {
+        return mUpdateMonitor;
+    }
+
     /**
      * @return Whether we are stuck on the lock screen because the sim is
      *   missing.
      */
-    private boolean stuckOnLockScreenBecauseSimMissing() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    boolean stuckOnLockScreenBecauseSimMissing() {
         return mRequiresSim
                 && (!mUpdateMonitor.isDeviceProvisioned())
                 && (mUpdateMonitor.getSimState() == IccCard.State.ABSENT ||
@@ -299,6 +323,7 @@ public class LockPatternKeyguardView extends KeyguardViewBase implements Handler
      *   on dynamic information.
      * @param lockPatternUtils Used to look up state of lock pattern.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public LockPatternKeyguardView(
             Context context,
             KeyguardUpdateMonitor updateMonitor,
@@ -318,8 +343,22 @@ public class LockPatternKeyguardView extends KeyguardViewBase implements Handler
 
         mUpdateMonitor.registerInfoCallback(this);
 
-        mKeyguardScreenCallback = new KeyguardScreenCallback() {
+        mKeyguardScreenCallback = createKeyguardScreenCallback();
 
+        /**
+         * We'll get key events the current screen doesn't use. see
+         * {@link KeyguardViewBase#onKeyDown(int, android.view.KeyEvent)}
+         */
+        setFocusableInTouchMode(true);
+        setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
+
+        updateScreen(getInitialMode(), false);
+        maybeEnableFallback(context);
+    }
+
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    protected KeyguardScreenCallback createKeyguardScreenCallback() {
+        return new KeyguardScreenCallback() {
             public void goToLockScreen() {
                 mForgotPattern = false;
                 if (mIsVerifyUnlockOnly) {
@@ -469,16 +508,6 @@ public class LockPatternKeyguardView extends KeyguardViewBase implements Handler
                 mLockPatternUtils.reportSuccessfulPasswordAttempt();
             }
         };
-
-        /**
-         * We'll get key events the current screen doesn't use. see
-         * {@link KeyguardViewBase#onKeyDown(int, android.view.KeyEvent)}
-         */
-        setFocusableInTouchMode(true);
-        setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
-
-        updateScreen(getInitialMode(), false);
-        maybeEnableFallback(context);
     }
 
     private class AccountAnalyzer implements AccountManagerCallback<Bundle> {
@@ -679,7 +708,8 @@ public class LockPatternKeyguardView extends KeyguardViewBase implements Handler
         }
     }
 
-    private void recreateLockScreen() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void recreateLockScreen() {
         if (mLockScreen != null) {
             ((KeyguardScreen) mLockScreen).onPause();
             ((KeyguardScreen) mLockScreen).cleanUp();

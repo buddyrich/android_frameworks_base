@@ -18,6 +18,8 @@ package com.android.internal.policy.impl;
 
 import com.android.internal.R;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.ActivityManager;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
@@ -103,13 +105,14 @@ public class KeyguardViewManager implements KeyguardWindowController {
      * Show the keyguard.  Will handle creating and attaching to the view manager
      * lazily.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public synchronized void show() {
         if (DEBUG) Log.d(TAG, "show(); mKeyguardView==" + mKeyguardView);
 
         Resources res = mContext.getResources();
         boolean enableScreenRotation =
                 SystemProperties.getBoolean("lockscreen.rot_override",false)
-                || (res.getBoolean(R.bool.config_enableLockScreenRotation) && (Settings.System.getInt(mContext.getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, 1) != 0));
+                || res.getBoolean(R.bool.config_enableLockScreenRotation);
         if (mKeyguardHost == null) {
             if (DEBUG) Log.d(TAG, "keyguard host is null, creating it...");
 
@@ -119,8 +122,8 @@ public class KeyguardViewManager implements KeyguardWindowController {
             int flags = WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN
                     | WindowManager.LayoutParams.FLAG_SHOW_WALLPAPER
                     | WindowManager.LayoutParams.FLAG_KEEP_SURFACE_WHILE_ANIMATING
-                    /*| WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                    | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR*/ ;
+                    | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                    /*| WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR*/ ;
             if (!mNeedsInput) {
                 flags |= WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
             }
@@ -139,6 +142,8 @@ public class KeyguardViewManager implements KeyguardWindowController {
                 lp.privateFlags |=
                         WindowManager.LayoutParams.PRIVATE_FLAG_FORCE_HARDWARE_ACCELERATED;
             }
+
+            lp.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
             lp.privateFlags |= WindowManager.LayoutParams.PRIVATE_FLAG_SET_NEEDS_MENU_KEY;
             lp.setTitle("Keyguard");
             mWindowLayoutParams = lp;
@@ -151,7 +156,7 @@ public class KeyguardViewManager implements KeyguardWindowController {
             mWindowLayoutParams.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR;
         } else {
             if (DEBUG) Log.d(TAG, "Rotation sensor for lock screen Off!");
-            mWindowLayoutParams.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_NOSENSOR;
+            mWindowLayoutParams.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT; //miui hook
         }
 
         mViewManager.updateViewLayout(mKeyguardHost, mWindowLayoutParams);

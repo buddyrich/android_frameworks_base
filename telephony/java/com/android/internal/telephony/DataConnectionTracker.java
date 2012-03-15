@@ -16,6 +16,8 @@
 
 package com.android.internal.telephony;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -47,6 +49,8 @@ import com.android.internal.R;
 import com.android.internal.telephony.DataConnection.FailCause;
 import com.android.internal.util.AsyncChannel;
 import com.android.internal.util.Protocol;
+
+import miui.provider.ExtraSettings;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -759,17 +763,27 @@ public abstract class DataConnectionTracker extends Handler {
         }
     }
 
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    protected boolean isMmsDataEnabled() {
+        return mRequestedApnType.equals(Phone.APN_TYPE_MMS) &&
+                    Settings.System.getInt(mPhone.getContext().getContentResolver(), ExtraSettings.System.ALWAYS_ENABLE_MMS, 1) == 1;
+    }
+
     /**
      * Report on whether data connectivity is enabled
      *
      * @return {@code false} if data connectivity has been explicitly disabled,
      *         {@code true} otherwise.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public boolean getAnyDataEnabled() {
-        final boolean result;
+        boolean result;
         synchronized (mDataEnabledLock) {
-            result = (mInternalDataEnabled && mUserDataEnabled && sPolicyDataEnabled
-                    && (enabledCount != 0));
+            result = isMmsDataEnabled();
+            if (! result) {
+                result = (mInternalDataEnabled && mUserDataEnabled && sPolicyDataEnabled
+                        && (enabledCount != 0));
+            }
         }
         if (!result && DBG) log("getAnyDataEnabled " + result);
         return result;

@@ -16,6 +16,8 @@
 
 package com.android.server;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Handler;
@@ -55,11 +57,13 @@ public class LightsService {
      */
     static final int BRIGHTNESS_MODE_SENSOR = 1;
 
-    private final Light mLights[] = new Light[LIGHT_ID_COUNT];
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    final Light mLights[] = new Light[LIGHT_ID_COUNT];
 
-    public final class Light {
-
-        private Light(int id) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    public class Light {
+        @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+        Light(int id) {
             mId = id;
         }
 
@@ -113,7 +117,8 @@ public class LightsService {
             }
         }
 
-        private void setLightLocked(int color, int mode, int onMS, int offMS, int brightnessMode) {
+        @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+        void setLightLocked(int color, int mode, int onMS, int offMS, int brightnessMode) {
             if (color != mColor || mode != mMode || onMS != mOnMS || offMS != mOffMS) {
                 if (DEBUG) Slog.v(TAG, "setLight #" + mId + ": color=#"
                         + Integer.toHexString(color));

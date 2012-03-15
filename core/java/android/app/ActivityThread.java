@@ -16,6 +16,8 @@
 
 package android.app;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.backup.BackupAgent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentCallbacks2;
@@ -1453,6 +1455,7 @@ public final class ActivityThread {
      * @param compInfo the compability info. It will use the default compatibility info when it's
      * null.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     Resources getTopLevelResources(String resDir, CompatibilityInfo compInfo) {
         ResourcesKey key = new ResourcesKey(resDir, compInfo.applicationScale);
         Resources r;
@@ -1486,7 +1489,7 @@ public final class ActivityThread {
 
         //Slog.i(TAG, "Resource: key=" + key + ", display metrics=" + metrics);
         DisplayMetrics metrics = getDisplayMetricsLocked(null, false);
-        r = new Resources(assets, metrics, getConfiguration(), compInfo);
+        r = android.content.res.MiuiClassFactory.newResources(assets, metrics, getConfiguration(), compInfo); // MIUIHOOK
         if (false) {
             Slog.i(TAG, "Created app resources " + resDir + " " + r + ": "
                     + r.getConfiguration() + " appScale="
@@ -3478,6 +3481,7 @@ public final class ActivityThread {
         }
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     final boolean applyConfigurationToResourcesLocked(Configuration config,
             CompatibilityInfo compat) {
         if (mResConfiguration == null) {
@@ -3498,6 +3502,7 @@ public final class ActivityThread {
                     | ActivityInfo.CONFIG_SCREEN_SIZE
                     | ActivityInfo.CONFIG_SMALLEST_SCREEN_SIZE;
         }
+        MiuiThemeHelper.handleExtraConfigurationChanges(changes); // MIUIHOOK
 
         // set it for java, this also affects newly created Resources
         if (config.locale != null) {

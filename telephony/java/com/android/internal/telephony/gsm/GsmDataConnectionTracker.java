@@ -16,6 +16,8 @@
 
 package com.android.internal.telephony.gsm;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.ContentResolver;
@@ -64,6 +66,9 @@ import com.android.internal.telephony.PhoneBase;
 import com.android.internal.telephony.RILConstants;
 import com.android.internal.telephony.RetryManager;
 import com.android.internal.util.AsyncChannel;
+
+import miui.net.FirewallManager;
+import miui.provider.ExtraSettings;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -609,9 +614,12 @@ public final class GsmDataConnectionTracker extends DataConnectionTracker {
      * {@code true} otherwise.
      */
     @Override
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public boolean getAnyDataEnabled() {
         synchronized (mDataEnabledLock) {
-            if (!(mInternalDataEnabled && mUserDataEnabled && sPolicyDataEnabled)) return false;
+            if (! isMmsDataEnabled()) {
+                if (!(mInternalDataEnabled && mUserDataEnabled && sPolicyDataEnabled)) return false;
+            }
             for (ApnContext apnContext : mApnContexts.values()) {
                 // Make sure we dont have a context that going down
                 // and is explicitly disabled.
@@ -1819,8 +1827,21 @@ public final class GsmDataConnectionTracker extends DataConnectionTracker {
         return null;
     }
 
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    private String getApnType(int enabled, int apnId){
+        String requestedApnType;
+        if (enabled == ENABLED) {
+            requestedApnType = apnIdToType(apnId);
+        } else {
+            requestedApnType = Phone.APN_TYPE_DEFAULT;
+        }
+        return requestedApnType;
+    }
+
     @Override
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     protected void onEnableApn(int apnId, int enabled) {
+        mRequestedApnType = getApnType(enabled, apnId);
         ApnContext apnContext = mApnContexts.get(apnIdToType(apnId));
         if (apnContext == null) {
             loge("onEnableApn(" + apnId + ", " + enabled + "): NO ApnContext");
@@ -1912,6 +1933,7 @@ public final class GsmDataConnectionTracker extends DataConnectionTracker {
     }
 
     @Override
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     protected void onDataSetupComplete(AsyncResult ar) {
 
         ApnContext apnContext = null;
@@ -1952,6 +1974,10 @@ public final class GsmDataConnectionTracker extends DataConnectionTracker {
                             apn.port + "): " + e);
                 }
             }
+
+            FirewallManager.getInstance().onDataConnected(ConnectivityManager.TYPE_MOBILE,
+                    FirewallManager.encodeApnSetting(apn),
+                    dcac.getLinkPropertiesSync().getInterfaceName());
 
             // everything is setup
             if(TextUtils.equals(apnContext.getApnType(),Phone.APN_TYPE_DEFAULT)) {
@@ -2040,6 +2066,7 @@ public final class GsmDataConnectionTracker extends DataConnectionTracker {
      * Called when EVENT_DISCONNECT_DONE is received.
      */
     @Override
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     protected void onDisconnectDone(int connId, AsyncResult ar) {
         ApnContext apnContext = null;
 
@@ -2052,6 +2079,9 @@ public final class GsmDataConnectionTracker extends DataConnectionTracker {
         }
 
         apnContext.setState(State.IDLE);
+
+        FirewallManager.getInstance().onDataDisconnected(ConnectivityManager.TYPE_MOBILE,
+                FirewallManager.encodeApnSetting(apnContext.getApnSetting()));
 
         mPhone.notifyDataConnection(apnContext.getReason(), apnContext.getApnType());
 

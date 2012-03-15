@@ -20,6 +20,8 @@ import com.android.internal.R;
 import com.android.internal.telephony.ITelephony;
 import com.google.android.collect.Lists;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.admin.DevicePolicyManager;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -38,6 +40,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -49,6 +52,8 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import miui.security.MiuiLockPatternUtils;
 
 /**
  * Utilities for the lock pattern and its settings.
@@ -137,6 +142,7 @@ public class LockPatternUtils {
         }
 
         @Override
+        @MiuiHook(MiuiHookType.CHANGE_CODE)
         public void onEvent(int event, String path) {
             if (LOCK_PATTERN_FILE.equals(path)) {
                 Log.d(TAG, "lock pattern file changed");
@@ -144,6 +150,9 @@ public class LockPatternUtils {
             } else if (LOCK_PASSWORD_FILE.equals(path)) {
                 Log.d(TAG, "lock password file changed");
                 sHaveNonZeroPasswordFile.set(new File(sLockPasswordFilename).length() > 0);
+            } else if (MiuiLockPatternUtils.LOCK_AC_FILE.equals(path)) {
+                Log.d(TAG, "access control password file changed");
+                MiuiLockPatternUtils.sHaveNonZeroACFile.set(new File(MiuiLockPatternUtils.sLockACFilename).length() > 0);
             }
         }
     }
@@ -742,7 +751,8 @@ public class LockPatternUtils {
      * @param pattern the gesture pattern.
      * @return the hash of the pattern in a byte array.
      */
-    private static byte[] patternToHash(List<LockPatternView.Cell> pattern) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    protected static byte[] patternToHash(List<LockPatternView.Cell> pattern) {
         if (pattern == null) {
             return null;
         }

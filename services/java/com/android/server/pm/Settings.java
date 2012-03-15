@@ -1510,6 +1510,7 @@ final class Settings {
         mDisabledSysPackages.put(name, ps);
     }
 
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     private void readPackageLPw(XmlPullParser parser) throws XmlPullParserException, IOException {
         String name = null;
         String realName = null;
@@ -1664,6 +1665,9 @@ final class Settings {
             if (enabledStr != null) {
                 try {
                     packageSetting.enabled = Integer.parseInt(enabledStr);
+                    if (packageSetting.enabled == COMPONENT_ENABLED_STATE_DISABLED) {
+                        packageSetting.enabled = COMPONENT_ENABLED_STATE_DEFAULT;
+                    }
                 } catch (NumberFormatException e) {
                     if (enabledStr.equalsIgnoreCase("true")) {
                         packageSetting.enabled = COMPONENT_ENABLED_STATE_ENABLED;

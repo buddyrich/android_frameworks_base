@@ -56,7 +56,6 @@ import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.VolumePanel;
 
 import com.android.internal.telephony.ITelephony;
 
@@ -71,6 +70,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Stack;
+
+import miui.view.VolumePanel;
 
 /**
  * The implementation of the volume manager service.

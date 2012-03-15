@@ -72,4 +72,12 @@ public class IccPhoneBookInterfaceManagerProxy extends IIccPhoneBook.Stub {
     public List<AdnRecord> getAdnRecordsInEf(int efid) throws android.os.RemoteException {
         return mIccPhoneBookInterfaceManager.getAdnRecordsInEf(efid);
     }
+
+    public int getFreeAdn(){
+        return mIccPhoneBookInterfaceManager.getFreeAdn();
+    }
+
+    public int getAdnCapacity(){
+        return mIccPhoneBookInterfaceManager.getAdnCapacity();
+    }
 }

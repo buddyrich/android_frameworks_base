@@ -16,6 +16,8 @@
 
 package com.android.server;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.Activity;
 import android.app.ActivityManagerNative;
 import android.app.AlarmManager;
@@ -159,8 +161,20 @@ class AlarmManagerService extends IAlarmManager.Stub {
         setRepeating(type, triggerAtTime, 0, operation);
     }
     
-    public void setRepeating(int type, long triggerAtTime, long interval, 
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    public void setWithFlags(int type, long triggerAtTime, PendingIntent operation, int flags) {
+        setRepeatingWithFlags(type, triggerAtTime, 0, operation, flags);
+    }
+
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
+    public void setRepeating(int type, long triggerAtTime, long interval,
             PendingIntent operation) {
+        setRepeatingWithFlags(type, triggerAtTime, interval, operation, 0);
+    }
+
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    public void setRepeatingWithFlags(int type, long triggerAtTime, long interval,
+            PendingIntent operation, int flags) {
         if (operation == null) {
             Slog.w(TAG, "set/setRepeating ignored because there is no intent");
             return;
@@ -171,6 +185,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
             alarm.when = triggerAtTime;
             alarm.repeatInterval = interval;
             alarm.operation = operation;
+            alarm.flags = flags;
 
             // Remove this alarm if already scheduled.
             removeLocked(operation);
@@ -277,7 +292,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
             removeLocked(operation);
         }
     }
-    
+
     public void removeLocked(PendingIntent operation) {
         removeLocked(mRtcWakeupAlarms, operation);
         removeLocked(mRtcAlarms, operation);
@@ -301,16 +316,18 @@ class AlarmManagerService extends IAlarmManager.Stub {
             }
         }
     }
-    
-    public void removeLocked(String packageName) {
-        removeLocked(mRtcWakeupAlarms, packageName);
-        removeLocked(mRtcAlarms, packageName);
-        removeLocked(mElapsedRealtimeWakeupAlarms, packageName);
-        removeLocked(mElapsedRealtimeAlarms, packageName);
+
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
+    public void removeLocked(String packageName, String action) {
+        removeLocked(mRtcWakeupAlarms, packageName, action);
+        removeLocked(mRtcAlarms, packageName, action);
+        removeLocked(mElapsedRealtimeWakeupAlarms, packageName, action);
+        removeLocked(mElapsedRealtimeAlarms, packageName, action);
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private void removeLocked(ArrayList<Alarm> alarmList,
-            String packageName) {
+            String packageName, String action) {
         if (alarmList.size() <= 0) {
             return;
         }
@@ -320,12 +337,16 @@ class AlarmManagerService extends IAlarmManager.Stub {
         
         while (it.hasNext()) {
             Alarm alarm = it.next();
+            if (Intent.ACTION_PACKAGE_RESTARTED.equals(action) &&
+               ((alarm.flags & AlarmManager.FLAG_KEEP_ALARM_WHEN_PACKAGE_RESTARTED) != 0)) {
+                continue;
+            }
             if (alarm.operation.getTargetPackage().equals(packageName)) {
                 it.remove();
             }
         }
     }
-    
+
     public boolean lookForPackageLocked(String packageName) {
         return lookForPackageLocked(mRtcWakeupAlarms, packageName)
                 || lookForPackageLocked(mRtcAlarms, packageName)
@@ -583,6 +604,9 @@ class AlarmManagerService extends IAlarmManager.Stub {
         public long when;
         public long repeatInterval;
         public PendingIntent operation;
+        // Values are FLAG_XXXX in AlarmManager.java. Default is 0.
+        @MiuiHook(MiuiHookType.NEW_FIELD)
+        public int flags;
         
         public Alarm() {
             when = 0;
@@ -777,7 +801,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
             set(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + tickEventDelay,
                     mTimeTickSender);
         }
-	
+
         public void scheduleDateChangedEvent() {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(System.currentTimeMillis());
@@ -806,6 +830,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
         }
         
         @Override
+        @MiuiHook(MiuiHookType.CHANGE_CODE)
         public void onReceive(Context context, Intent intent) {
             synchronized (mLock) {
                 String action = intent.getAction();
@@ -837,7 +862,7 @@ class AlarmManagerService extends IAlarmManager.Stub {
                 }
                 if (pkgList != null && (pkgList.length > 0)) {
                     for (String pkg : pkgList) {
-                        removeLocked(pkg);
+                        removeLocked(pkg, action);
                         mBroadcastStats.remove(pkg);
                     }
                 }

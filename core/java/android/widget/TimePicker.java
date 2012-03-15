@@ -16,6 +16,8 @@
 
 package android.widget;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.annotation.Widget;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -125,6 +127,7 @@ public class TimePicker extends FrameLayout {
         this(context, attrs, R.attr.timePickerStyle);
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public TimePicker(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
 
@@ -212,6 +215,7 @@ public class TimePicker extends FrameLayout {
                     button.requestFocus();
                     mIsAm = !mIsAm;
                     updateAmPmControl();
+                    onTimeChanged();
                 }
             });
         } else {
@@ -226,6 +230,7 @@ public class TimePicker extends FrameLayout {
                     picker.requestFocus();
                     mIsAm = !mIsAm;
                     updateAmPmControl();
+                    onTimeChanged();
                 }
             });
             mAmPmSpinnerInput = (EditText) mAmPmSpinner.findViewById(R.id.numberpicker_input);
@@ -508,7 +513,8 @@ public class TimePicker extends FrameLayout {
         sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_SELECTED);
     }
 
-    private void onTimeChanged() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void onTimeChanged() {
         sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_SELECTED);
         if (mOnTimeChangedListener != null) {
             mOnTimeChangedListener.onTimeChanged(this, getCurrentHour(), getCurrentMinute());

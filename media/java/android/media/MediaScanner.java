@@ -20,6 +20,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
@@ -322,7 +324,8 @@ public class MediaScanner
     // This problem might be solvable by moving the logic to the media provider or disabling bulk
     // inserts only for those cases. For now, we are disabling bulk inserts until we have a solid
     // fix for this problem.
-    private static final boolean ENABLE_BULK_INSERTS = false;
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
+    private static final boolean ENABLE_BULK_INSERTS = true;
 
     // used when scanning the image database so we know whether we have to prune
     // old thumbnail files
@@ -754,6 +757,7 @@ public class MediaScanner
             return map;
         }
 
+        @MiuiHook(MiuiHookType.CHANGE_CODE)
         private Uri endFile(FileCacheEntry entry, boolean ringtones, boolean notifications,
                 boolean alarms, boolean music, boolean podcasts)
                 throws RemoteException {
@@ -903,19 +907,19 @@ public class MediaScanner
             if (notifications && mWasEmptyPriorToScan && !mDefaultNotificationSet) {
                 if (TextUtils.isEmpty(mDefaultNotificationFilename) ||
                         doesPathHaveFilename(entry.mPath, mDefaultNotificationFilename)) {
-                    setSettingIfNotSet(Settings.System.NOTIFICATION_SOUND, tableUri, rowId);
+                    setSettingIfNotSet(Settings.System.NOTIFICATION_SOUND, entry.mPath); //MIUI hook
                     mDefaultNotificationSet = true;
                 }
             } else if (ringtones && mWasEmptyPriorToScan && !mDefaultRingtoneSet) {
                 if (TextUtils.isEmpty(mDefaultRingtoneFilename) ||
                         doesPathHaveFilename(entry.mPath, mDefaultRingtoneFilename)) {
-                    setSettingIfNotSet(Settings.System.RINGTONE, tableUri, rowId);
+                    setSettingIfNotSet(Settings.System.RINGTONE, entry.mPath); //MIUI hook
                     mDefaultRingtoneSet = true;
                 }
             } else if (alarms && mWasEmptyPriorToScan && !mDefaultAlarmSet) {
                 if (TextUtils.isEmpty(mDefaultAlarmAlertFilename) ||
                         doesPathHaveFilename(entry.mPath, mDefaultAlarmAlertFilename)) {
-                    setSettingIfNotSet(Settings.System.ALARM_ALERT, tableUri, rowId);
+                    setSettingIfNotSet(Settings.System.ALARM_ALERT, entry.mPath); //MIUI hook
                     mDefaultAlarmSet = true;
                 }
             }
@@ -939,6 +943,18 @@ public class MediaScanner
                 // Set the setting to the given URI
                 Settings.System.putString(mContext.getContentResolver(), settingName,
                         ContentUris.withAppendedId(uri, rowId).toString());
+            }
+        }
+
+        @MiuiHook(MiuiHookType.NEW_METHOD)
+        private void setSettingIfNotSet(String settingName, String path) {
+            String existingSettingValue = Settings.System.getString(mContext.getContentResolver(),
+                    settingName);
+
+            if (TextUtils.isEmpty(existingSettingValue)) {
+                // Set the setting to the given path
+                Settings.System.putString(mContext.getContentResolver(), settingName,
+                        Uri.fromFile(new File(path)).toString());
             }
         }
 

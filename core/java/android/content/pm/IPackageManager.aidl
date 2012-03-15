@@ -363,5 +363,7 @@ interface IPackageManager {
 
     VerifierDeviceIdentity getVerifierDeviceIdentity();
 
+    void setAccessControl(String packageName, int flag);
+
     boolean isFirstBoot();
 }

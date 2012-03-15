@@ -16,6 +16,8 @@
 
 package android.widget;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.SearchDialog;
 import android.app.SearchManager;
 import android.app.SearchableInfo;
@@ -653,6 +655,7 @@ class SuggestionsAdapter extends ResourceCursorAdapter implements OnClickListene
      * @return A drawable, or {@code null} if neither the acitivy or the application
      *         have an icon set.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private Drawable getActivityIcon(ComponentName component) {
         PackageManager pm = mContext.getPackageManager();
         final ActivityInfo activityInfo;
@@ -664,8 +667,7 @@ class SuggestionsAdapter extends ResourceCursorAdapter implements OnClickListene
         }
         int iconId = activityInfo.getIconResource();
         if (iconId == 0) return null;
-        String pkg = component.getPackageName();
-        Drawable drawable = pm.getDrawable(pkg, iconId, activityInfo.applicationInfo);
+        Drawable drawable = activityInfo.loadIcon(pm);
         if (drawable == null) {
             Log.w(LOG_TAG, "Invalid icon resource " + iconId + " for "
                     + component.flattenToShortString());

@@ -17,6 +17,8 @@
 
 package com.android.internal.telephony;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.Activity;
 import android.content.Context;
 import android.content.ComponentName;
@@ -27,6 +29,8 @@ import android.provider.Telephony.Sms.Intents;
 import android.util.Log;
 import android.os.IBinder;
 import android.os.RemoteException;
+
+import miui.provider.ExtraTelephony;
 
 /**
  * WAP push handler class.
@@ -132,6 +136,7 @@ public class WapPushOverSms {
      *         {@link Activity#RESULT_OK} if the message has been broadcast
      *         to applications
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public int dispatchWapPdu(byte[] pdu) {
 
         if (false) Log.d(LOG_TAG, "Rx: " + IccUtils.bytesToHexString(pdu));
@@ -196,6 +201,14 @@ public class WapPushOverSms {
             int dataIndex = headerStartIndex + headerLength;
             intentData = new byte[pdu.length - dataIndex];
             System.arraycopy(pdu, dataIndex, intentData, 0, intentData.length);
+
+            /**
+             * push cache operation......
+             */
+            if (ExtraTelephony.checkFirewallForWapPush(mContext, intentData)) {
+                mSmsDispatcher.acknowledgeLastIncomingSms(true, Activity.RESULT_OK, null);
+                return Activity.RESULT_OK;
+            }
         }
 
         /**
@@ -272,4 +285,5 @@ public class WapPushOverSms {
 
         return Activity.RESULT_OK;
     }
+
 }

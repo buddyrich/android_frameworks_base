@@ -98,4 +98,13 @@ interface IIccPhoneBook {
      */
     int[] getAdnRecordsSize(int efid);
 
+    /**
+     * Get the free adn count
+     */
+    int getFreeAdn();
+
+    /**
+     * Get the adn capacity on card
+     */
+    int getAdnCapacity();
 }

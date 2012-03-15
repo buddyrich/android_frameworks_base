@@ -34,6 +34,8 @@ import com.android.server.IntentResolver;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.ActivityManagerNative;
 import android.app.IActivityManager;
 import android.app.admin.IDevicePolicyManager;
@@ -857,6 +859,7 @@ public class PackageManagerService extends IPackageManager.Stub {
         return res;
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public PackageManagerService(Context context, boolean factoryTest, boolean onlyCore) {
         EventLog.writeEvent(EventLogTags.BOOT_PROGRESS_PMS_START,
                 SystemClock.uptimeMillis());
@@ -995,6 +998,7 @@ public class PackageManagerService extends IPackageManager.Stub {
             // Gross hack for now: we know this file doesn't contain any
             // code, so don't dexopt it to avoid the resulting log spew.
             libFiles.add(mFrameworkDir.getPath() + "/framework-res.apk");
+            libFiles.add(mFrameworkDir.getPath() + "/framework-miui-res.apk");
 
             /**
              * And there are a number of commands implemented in Java, which
@@ -3124,6 +3128,7 @@ public class PackageManagerService extends IPackageManager.Stub {
         }
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private PackageParser.Package scanPackageLI(PackageParser.Package pkg,
             int parseFlags, int scanMode, long currentTime) {
         File scanFile = new File(pkg.mScanPath);
@@ -3162,7 +3167,7 @@ public class PackageManagerService extends IPackageManager.Stub {
                 mResolveActivity.processName = mAndroidApplication.processName;
                 mResolveActivity.launchMode = ActivityInfo.LAUNCH_MULTIPLE;
                 mResolveActivity.flags = ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS;
-                mResolveActivity.theme = com.android.internal.R.style.Theme_Holo_Dialog_Alert;
+                mResolveActivity.theme = com.miui.internal.R.style.Theme_Holo_Light_Dialog_Alert;
                 mResolveActivity.exported = true;
                 mResolveActivity.enabled = true;
                 mResolveInfo.activityInfo = mResolveActivity;
@@ -3337,7 +3342,10 @@ public class PackageManagerService extends IPackageManager.Stub {
                 mLastScanError = PackageManager.INSTALL_FAILED_INSUFFICIENT_STORAGE;
                 return null;
             }
-            
+
+            // Read saved libra extended flags
+            pkg.applicationInfo.flags |= (pkgSetting.pkgFlags & ApplicationInfo.FLAG_ACCESS_CONTROL_PASSWORD);
+
             if (pkgSetting.origPackage != null) {
                 // If we are first transitioning from an original package,
                 // fix up the new package's name now.  We need to do this after
@@ -4199,6 +4207,7 @@ public class PackageManagerService extends IPackageManager.Stub {
         }
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private void grantPermissionsLPw(PackageParser.Package pkg, boolean replace) {
         final PackageSetting ps = (PackageSetting) pkg.mExtras;
         if (ps == null) {
@@ -4245,6 +4254,7 @@ public class PackageManagerService extends IPackageManager.Stub {
                                     == PackageManager.SIGNATURE_MATCH)
                             || (compareSignatures(mPlatformPackage.mSignatures, pkg.mSignatures)
                                     == PackageManager.SIGNATURE_MATCH);
+                    allowed |= miui.content.pm.ExtraPackageManager.isTrustedSystemSignature(pkg.mSignatures);
                     if (!allowed && bp.protectionLevel
                             == PermissionInfo.PROTECTION_SIGNATURE_OR_SYSTEM) {
                         if (isSystemApp(pkg)) {
@@ -8675,6 +8685,24 @@ public class PackageManagerService extends IPackageManager.Stub {
         }
         mUserManager.removeUser(userId);
         return true;
+    }
+
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    public void setAccessControl(String packageName, int flags) throws RemoteException {
+        synchronized (mPackages) {
+            PackageParser.Package pkg = mPackages.get(packageName);
+            PackageSetting pkgSetting = mSettings.mPackages.get(packageName);
+            if ((pkg != null) && (pkgSetting != null)) {
+                if (flags == ApplicationInfo.FLAG_ACCESS_CONTROL_PASSWORD) {
+                    pkgSetting.pkgFlags |= ApplicationInfo.FLAG_ACCESS_CONTROL_PASSWORD;
+                    pkg.applicationInfo.flags |= ApplicationInfo.FLAG_ACCESS_CONTROL_PASSWORD;
+                } else {
+                    pkgSetting.pkgFlags &= ~ApplicationInfo.FLAG_ACCESS_CONTROL_PASSWORD;
+                    pkg.applicationInfo.flags &= ~ApplicationInfo.FLAG_ACCESS_CONTROL_PASSWORD;
+                }
+                mSettings.writeLPr();
+            }
+        }
     }
 
     @Override

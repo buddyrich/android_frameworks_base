@@ -648,8 +648,9 @@ public class TelephonyManager {
      *
      * @see #getSimState
      */
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     public String getSimOperator() {
-        return SystemProperties.get(TelephonyProperties.PROPERTY_ICC_OPERATOR_NUMERIC);
+        return miui.telephony.ExtraTelephonyManager.getSimOperator(sContext);
     }
 
     /**

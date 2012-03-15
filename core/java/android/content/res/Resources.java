@@ -21,6 +21,8 @@ import com.android.internal.util.XmlUtils;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.pm.ActivityInfo;
 import android.graphics.Movie;
 import android.graphics.drawable.Drawable;
@@ -43,6 +45,7 @@ import java.lang.ref.WeakReference;
 import java.util.Locale;
 
 import libcore.icu.NativePluralRules;
+import miui.content.pm.ExtraActivityInfo;
 
 /**
  * Class for accessing an application's resources.  This sits on top of the
@@ -213,11 +216,12 @@ public class Resources {
      * the current screen (can not use dimension units, does not change based 
      * on orientation, etc). 
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public static Resources getSystem() {
         synchronized (mSync) {
             Resources ret = mSystem;
             if (ret == null) {
-                ret = new Resources();
+                ret = MiuiClassFactory.newResources(); // MIUIHOOK
                 mSystem = ret;
             }
 
@@ -1119,7 +1123,8 @@ public class Resources {
      * <p>You will normally use the {@link #obtainStyledAttributes} APIs to
      * retrieve XML attributes with style and theme information applied.
      */
-    public final class Theme {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    public class Theme {
         /**
          * Place new attribute values into the theme.  The style resource
          * specified by <var>resid</var> will be retrieved from this Theme's
@@ -1397,7 +1402,8 @@ public class Resources {
      * 
      * @return Theme The newly created Theme container.
      */
-    public final Theme newTheme() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    public Theme newTheme() {
         return new Theme();
     }
 
@@ -1442,6 +1448,7 @@ public class Resources {
     /**
      * @hide
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public void updateConfiguration(Configuration config,
             DisplayMetrics metrics, CompatibilityInfo compat) {
         synchronized (mTmpValue) {
@@ -1479,7 +1486,8 @@ public class Resources {
                     mTmpConfig.locale = Locale.getDefault();
                 }
                 configChanges = mConfiguration.updateFrom(mTmpConfig);
-                configChanges = ActivityInfo.activityInfoConfigToNative(configChanges);
+                configChanges = ActivityInfo.activityInfoConfigToNative(configChanges)
+                                | (configChanges & ExtraActivityInfo.CONFIG_MASK);
             }
             if (mConfiguration.locale == null) {
                 mConfiguration.locale = Locale.getDefault();
@@ -1960,7 +1968,7 @@ public class Resources {
                         throw rnf;
                     }
 
-                } else {
+                } else if ((dr = loadOverlayDrawable(value, id)) == null) { // MIUIHOOK
                     try {
                         InputStream is = mAssets.openNonAsset(
                                 value.assetCookie, file, AssetManager.ACCESS_STREAMING);
@@ -2195,6 +2203,7 @@ public class Resources {
                 + Integer.toHexString(id));
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private TypedArray getCachedStyledAttributes(int len) {
         synchronized (mTmpValue) {
             TypedArray attrs = mCachedStyledAttributes;
@@ -2223,13 +2232,14 @@ public class Resources {
                 }
                 mLastRetrievedAttrs = here;
             }
-            return new TypedArray(this,
+            return MiuiClassFactory.newTypedArray(this, // MIUIHOOK
                     new int[len*AssetManager.STYLE_NUM_ENTRIES],
                     new int[1+len], len);
         }
     }
 
-    private Resources() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    Resources() {
         mAssets = AssetManager.getSystem();
         // NOTE: Intentionally leaving this uninitialized (all values set
         // to zero), so that anyone who tries to do something that requires
@@ -2239,5 +2249,15 @@ public class Resources {
         updateConfiguration(null, null);
         mAssets.ensureStringBlocks();
         mCompatibilityInfo = CompatibilityInfo.DEFAULT_COMPATIBILITY_INFO;
+    }
+
+    /**
+     * @param id 
+     * @param value 
+     * @hide
+     */
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    Drawable loadOverlayDrawable(TypedValue value, int id) {
+        return null;
     }
 }

@@ -18,6 +18,7 @@ package com.android.internal.telephony;
 
 import android.os.AsyncResult;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
 import android.util.Log;
 import android.util.SparseArray;
@@ -54,11 +55,14 @@ public final class AdnRecordCache extends Handler implements IccConstants {
 
     //***** Constructor
 
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.NEW_FIELD)
+    private AdnCacheManager mAdnCacheManager;
 
-
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     public AdnRecordCache(PhoneBase phone) {
         this.phone = phone;
         mUsimPhoneBookManager = new UsimPhoneBookManager(phone, this);
+        mAdnCacheManager = new AdnCacheManager(this);
     }
 
     //***** Called from SIMRecords
@@ -66,13 +70,14 @@ public final class AdnRecordCache extends Handler implements IccConstants {
     /**
      * Called from SIMRecords.onRadioNotAvailable and SIMRecords.handleSimRefresh.
      */
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     public void reset() {
         adnLikeFiles.clear();
         mUsimPhoneBookManager.reset();
 
         clearWaiters();
         clearUserWriters();
-
+        mAdnCacheManager.reset();
     }
 
     private void clearWaiters() {
@@ -174,6 +179,7 @@ public final class AdnRecordCache extends Handler implements IccConstants {
      * @param response message to be posted when done
      *        response.exception hold the exception in error
      */
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     public void updateAdnBySearch(int efid, AdnRecord oldAdn, AdnRecord newAdn,
             String pin2, Message response) {
 
@@ -210,6 +216,7 @@ public final class AdnRecordCache extends Handler implements IccConstants {
 
         if (index == -1) {
             sendErrorResponse(response, "Adn record don't exist for " + oldAdn);
+            mAdnCacheManager.handleNonExistentAdnRecord(efid);
             return;
         }
 
@@ -224,6 +231,7 @@ public final class AdnRecordCache extends Handler implements IccConstants {
             newAdn.recordNumber = index;
         }
 
+        mAdnCacheManager.handleUpdateAdnRecord(efid, oldAdn, newAdn);
         Message pendingResponse = userWriteResponse.get(efid);
 
         if (pendingResponse != null) {
@@ -243,6 +251,7 @@ public final class AdnRecordCache extends Handler implements IccConstants {
      * Responds with exception (in response) if efid is not a known ADN-like
      * record
      */
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     public void
     requestLoadAllAdnLike (int efid, int extensionEf, Message response) {
         ArrayList<Message> waiters;
@@ -257,6 +266,7 @@ public final class AdnRecordCache extends Handler implements IccConstants {
         // Have we already loaded this efid?
         if (result != null) {
             if (response != null) {
+                mAdnCacheManager.handleAllAdnLikeLoaded(efid, result);
                 AsyncResult.forMessage(response).result = result;
                 response.sendToTarget();
             }
@@ -318,7 +328,7 @@ public final class AdnRecordCache extends Handler implements IccConstants {
     }
 
     //***** Overridden from Handler
-
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     public void
     handleMessage(Message msg) {
         AsyncResult ar;
@@ -335,7 +345,7 @@ public final class AdnRecordCache extends Handler implements IccConstants {
                 adnLikeWaiters.delete(efid);
 
                 if (ar.exception == null) {
-                    adnLikeFiles.put(efid, (ArrayList<AdnRecord>) ar.result);
+                    mAdnCacheManager.handleLoadAllAdnLike(efid, ar);
                 }
                 notifyWaiters(waiters, ar);
                 break;
@@ -360,5 +370,13 @@ public final class AdnRecordCache extends Handler implements IccConstants {
 
     }
 
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.NEW_METHOD)
+    public int getFreeAdn(){
+        return mAdnCacheManager.getFreeAdn();
+    }
 
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.NEW_METHOD)
+    public int getAdnCapacity() {
+        return mAdnCacheManager.getAdnCapacity();
+    }
 }

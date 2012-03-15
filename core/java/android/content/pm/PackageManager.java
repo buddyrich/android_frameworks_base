@@ -16,6 +16,8 @@
 
 package android.content.pm;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
 import android.content.ComponentName;
@@ -2646,6 +2648,15 @@ public abstract class PackageManager {
     public static int getAppId(int uid) {
         return uid % PER_USER_RANGE;
     }
+
+    /**
+     * Set access control mode for the application.
+     * @param packageName
+     * @param flag
+     * @hide for libra only
+     */
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    public abstract void setAccessControl(String packageName, int flag);
 
     /**
      * Returns the device identity that verifiers can use to associate their

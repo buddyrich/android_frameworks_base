@@ -21,6 +21,8 @@ import static android.provider.Settings.System.SCREEN_OFF_TIMEOUT;
 import com.android.internal.telephony.IccCard;
 import com.android.internal.widget.LockPatternUtils;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.ActivityManagerNative;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -94,7 +96,7 @@ import android.view.WindowManagerPolicy;
 public class KeyguardViewMediator implements KeyguardViewCallback,
         KeyguardUpdateMonitor.InfoCallback, KeyguardUpdateMonitor.SimStateCallback {
     private static final int KEYGUARD_DISPLAY_TIMEOUT_DELAY_DEFAULT = 30000;
-    private final static boolean DEBUG = false;
+    private final static boolean DEBUG = true;
     private final static boolean DBG_WAKE = false;
 
     private final static String TAG = "KeyguardViewMediator";
@@ -156,10 +158,10 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
     /** Maximum volume for lock sounds, as a ratio of max MASTER_STREAM_TYPE */
     final float MAX_LOCK_VOLUME = 0.4f;
 
-    private Context mContext;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS) Context mContext;
     private AlarmManager mAlarmManager;
     private AudioManager mAudioManager;
-    private StatusBarManager mStatusBarManager;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS) StatusBarManager mStatusBarManager;
     private boolean mShowLockIcon;
     private boolean mShowingLockIcon;
 
@@ -269,6 +271,7 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
 
     private ProfileManager mProfileManager;
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public KeyguardViewMediator(Context context, PhoneWindowManager callback,
             LocalPowerManager powerManager) {
         mContext = context;
@@ -304,7 +307,7 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
 
         mLockPatternUtils = new LockPatternUtils(mContext);
         mKeyguardViewProperties
-                = new LockPatternKeyguardViewProperties(mLockPatternUtils, mUpdateMonitor);
+                = MiuiClassFactory.createKeyguardViewProperties(mLockPatternUtils, mUpdateMonitor);
 
         mKeyguardViewManager = new KeyguardViewManager(
                 context, WindowManagerImpl.getDefault(), this,
@@ -672,7 +675,8 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
      * @see #onScreenTurnedOff(int)
      * @see #handleNotifyScreenOff
      */
-    private void notifyScreenOffLocked() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void notifyScreenOffLocked() {
         if (DEBUG) Log.d(TAG, "notifyScreenOffLocked");
         mHandler.sendEmptyMessage(NOTIFY_SCREEN_OFF);
     }
@@ -867,7 +871,8 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
      * {@link KeyEvent#KEYCODE_POWER} is notably absent from this list because it
      * is always considered a wake key.
      */
-    private boolean isWakeKeyWhenKeyguardShowing(int keyCode, boolean isDocked) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    boolean isWakeKeyWhenKeyguardShowing(int keyCode, boolean isDocked) {
         switch (keyCode) {
             // ignore volume keys unless docked
             case KeyEvent.KEYCODE_VOLUME_UP:
@@ -1186,7 +1191,8 @@ public class KeyguardViewMediator implements KeyguardViewCallback,
         }
     }
 
-    private void adjustStatusBarLocked() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void adjustStatusBarLocked() {
         if (mStatusBarManager == null) {
             mStatusBarManager = (StatusBarManager)
                     mContext.getSystemService(Context.STATUS_BAR_SERVICE);

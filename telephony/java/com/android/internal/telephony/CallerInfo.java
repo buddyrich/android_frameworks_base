@@ -16,6 +16,8 @@
 
 package com.android.internal.telephony;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.Context;
 import android.database.Cursor;
 import android.graphics.drawable.Drawable;
@@ -34,6 +36,9 @@ import com.android.i18n.phonenumbers.geocoding.PhoneNumberOfflineGeocoder;
 import com.android.i18n.phonenumbers.NumberParseException;
 import com.android.i18n.phonenumbers.PhoneNumberUtil;
 import com.android.i18n.phonenumbers.Phonenumber.PhoneNumber;
+
+import miui.provider.ExtraContacts;
+import miui.telephony.ExtraCallerInfo;
 
 import java.util.Locale;
 
@@ -104,6 +109,10 @@ public class CallerInfo {
     public Uri contactRingtoneUri;
     public boolean shouldSendToVoicemail;
 
+    // Contains names for call card using
+    @MiuiHook(MiuiHookType.NEW_FIELD)
+    public ExtraCallerInfo extra = new ExtraCallerInfo();
+
     /**
      * Drawable representing the caller image.  This is essentially
      * a cache for the image data tied into the connection /
@@ -130,6 +139,7 @@ public class CallerInfo {
      * @return the CallerInfo which contains the caller id for the given
      * number. The returned CallerInfo is null if no number is supplied.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public static CallerInfo getCallerInfo(Context context, Uri contactRef, Cursor cursor) {
         CallerInfo info = new CallerInfo();
         info.photoResource = 0;
@@ -157,21 +167,21 @@ public class CallerInfo {
                 }
 
                 // Look for the number
-                columnIndex = cursor.getColumnIndex(PhoneLookup.NUMBER);
+                columnIndex = miui.telephony.CallerInfo.getColumnIndex(contactRef, PhoneLookup.NUMBER, cursor);
                 if (columnIndex != -1) {
                     info.phoneNumber = cursor.getString(columnIndex);
                 }
 
                 // Look for the normalized number
-                columnIndex = cursor.getColumnIndex(PhoneLookup.NORMALIZED_NUMBER);
+                columnIndex = miui.telephony.CallerInfo.getColumnIndex(contactRef, PhoneLookup.NORMALIZED_NUMBER, cursor);
                 if (columnIndex != -1) {
                     info.normalizedNumber = cursor.getString(columnIndex);
                 }
 
                 // Look for the label/type combo
-                columnIndex = cursor.getColumnIndex(PhoneLookup.LABEL);
+                columnIndex = miui.telephony.CallerInfo.getColumnIndex(contactRef, PhoneLookup.LABEL, cursor);
                 if (columnIndex != -1) {
-                    int typeColumnIndex = cursor.getColumnIndex(PhoneLookup.TYPE);
+                    int typeColumnIndex = miui.telephony.CallerInfo.getColumnIndex(contactRef, PhoneLookup.TYPE, cursor);
                     if (typeColumnIndex != -1) {
                         info.numberType = cursor.getInt(typeColumnIndex);
                         info.numberLabel = cursor.getString(columnIndex);
@@ -209,6 +219,8 @@ public class CallerInfo {
                 info.shouldSendToVoicemail = (columnIndex != -1) &&
                         ((cursor.getInt(columnIndex)) == 1);
                 info.contactExists = true;
+
+                info.extra = ExtraCallerInfo.getExtraCallerInfo(context, info, cursor);
             }
             cursor.close();
         }

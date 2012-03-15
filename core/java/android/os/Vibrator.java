@@ -16,6 +16,8 @@
 
 package android.os;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.util.Log;
 
 /**
@@ -109,6 +111,17 @@ public class Vibrator
             throw new ArrayIndexOutOfBoundsException();
         }
     }
+
+    /**
+     * Vibrate with a given parameter set
+     * @param param
+     * @hide
+     */
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    public void vibrateEx(byte[] params) {
+        return; // Not implemented yet
+    }
+
 
     /**
      * Turn the vibrator off.

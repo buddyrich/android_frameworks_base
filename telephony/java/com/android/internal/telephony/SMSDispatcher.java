@@ -16,6 +16,8 @@
 
 package com.android.internal.telephony;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.AlertDialog;
@@ -54,6 +56,8 @@ import java.util.HashMap;
 import java.util.Random;
 
 import com.android.internal.R;
+
+import miui.provider.ExtraTelephony;
 
 import static android.telephony.SmsManager.RESULT_ERROR_GENERIC_FAILURE;
 import static android.telephony.SmsManager.RESULT_ERROR_NO_SERVICE;
@@ -665,7 +669,13 @@ public abstract class SMSDispatcher extends Handler {
      *
      * @param pdus The raw PDUs making up the message
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     protected void dispatchPdus(byte[][] pdus) {
+        if (ExtraTelephony.checkFirewallForSms(mContext, pdus)) {
+            acknowledgeLastIncomingSms(true, Activity.RESULT_OK, null);
+            return;
+        };
+
         Intent intent = new Intent(Intents.SMS_RECEIVED_ACTION);
         intent.putExtra("pdus", pdus);
         intent.putExtra("format", getFormat());
@@ -678,7 +688,13 @@ public abstract class SMSDispatcher extends Handler {
      * @param pdus The raw PDUs making up the message
      * @param port The destination port of the messages
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     protected void dispatchPortAddressedPdus(byte[][] pdus, int port) {
+        if (ExtraTelephony.checkFirewallForSms(mContext, pdus)) {
+            acknowledgeLastIncomingSms(true, Activity.RESULT_OK, null);
+            return;
+        };
+
         Uri uri = Uri.parse("sms://localhost:" + port);
         Intent intent = new Intent(Intents.DATA_SMS_RECEIVED_ACTION, uri);
         intent.putExtra("pdus", pdus);

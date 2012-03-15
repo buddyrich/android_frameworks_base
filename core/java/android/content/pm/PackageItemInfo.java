@@ -16,6 +16,8 @@
 
 package android.content.pm;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.res.XmlResourceParser;
 
 import android.graphics.drawable.Drawable;
@@ -135,9 +137,10 @@ public class PackageItemInfo {
      * item does not have an icon, the item's default icon is returned
      * such as the default activity icon.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public Drawable loadIcon(PackageManager pm) {
         if (icon != 0) {
-            Drawable dr = pm.getDrawable(packageName, icon, getApplicationInfo());
+            Drawable dr = android.app.MiuiThemeHelper.getDrawable(pm, packageName, icon, getApplicationInfo(), name); // MIUIHOOK
             if (dr != null) {
                 return dr;
             }

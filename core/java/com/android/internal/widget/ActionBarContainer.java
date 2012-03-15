@@ -190,6 +190,7 @@ public class ActionBarContainer extends FrameLayout {
     }
 
     @Override
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     public void onLayout(boolean changed, int l, int t, int r, int b) {
         super.onLayout(changed, l, t, r, b);
 
@@ -230,8 +231,14 @@ public class ActionBarContainer extends FrameLayout {
                 needsInvalidate = true;
             }
             if ((mIsStacked = hasTabs && mStackedBackground != null)) {
-                mStackedBackground.setBounds(mTabContainer.getLeft(), mTabContainer.getTop(),
-                        mTabContainer.getRight(), mTabContainer.getBottom());
+                if (mBackground != null && mActionBarView.getHeight() == 0) {
+                    mBackground.setBounds(mTabContainer.getLeft(), mTabContainer.getTop(),
+                            mTabContainer.getRight(), mTabContainer.getBottom());
+                    mIsStacked = false;
+                } else {
+                    mStackedBackground.setBounds(mTabContainer.getLeft(), mTabContainer.getTop(),
+                            mTabContainer.getRight(), mTabContainer.getBottom());
+                }
                 needsInvalidate = true;
             }
         }

@@ -16,6 +16,8 @@
 
 package com.android.internal.policy.impl;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.Context;
 import android.util.Log;
 import android.view.FallbackEventHandler;
@@ -59,16 +61,18 @@ public class Policy implements IPolicy {
         }
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public Window makeNewWindow(Context context) {
-        return new PhoneWindow(context);
+        return MiuiClassFactory.createPhoneWindow(context);
     }
 
     public LayoutInflater makeNewLayoutInflater(Context context) {
         return new PhoneLayoutInflater(context);
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public WindowManagerPolicy makeNewWindowManager() {
-        return new PhoneWindowManager();
+        return MiuiClassFactory.createPhoneWindowManager();
     }
 
     public FallbackEventHandler makeNewFallbackEventHandler(Context context) {

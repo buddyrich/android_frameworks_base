@@ -16,6 +16,8 @@
 
 package com.android.internal.telephony.gsm;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import com.android.internal.telephony.CommandException;
 import com.android.internal.telephony.CommandsInterface;
 import com.android.internal.telephony.DataConnectionTracker;
@@ -482,10 +484,23 @@ final class GsmServiceStateTracker extends ServiceStateTracker {
         cm.setRadioPower(false, null);
     }
 
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    private String getPlmn(){
+        String plmn = ((SIMRecords) phone.mIccRecords).mSpnOverride.getSpn(ss.getOperatorNumeric());
+        if (TextUtils.isEmpty(plmn)) {
+            plmn = ss.getOperatorAlphaLong();
+        }
+        return plmn;
+    }
+
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     protected void updateSpnDisplay() {
         int rule = phone.mIccRecords.getDisplayRule(ss.getOperatorNumeric());
-        String spn = phone.mIccRecords.getServiceProviderName();
-        String plmn = ss.getOperatorAlphaLong();
+        String spn = ((SIMRecords) phone.mIccRecords).mSpnOverride.getSpn(phone.mIccRecords.getOperatorNumeric());
+        if (TextUtils.isEmpty(spn)) {
+            spn = phone.mIccRecords.getServiceProviderName();
+        }
+        String plmn = getPlmn();
 
         // For emergency calls only, pass the EmergencyCallsOnly string via EXTRA_PLMN
         if (mEmergencyOnly && cm.getRadioState().isOn()) {

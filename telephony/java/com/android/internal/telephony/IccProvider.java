@@ -33,13 +33,12 @@ import com.android.internal.telephony.IccConstants;
 import com.android.internal.telephony.AdnRecord;
 import com.android.internal.telephony.IIccPhoneBook;
 
-
 /**
  * {@hide}
  */
 public class IccProvider extends ContentProvider {
     private static final String TAG = "IccProvider";
-    private static final boolean DBG = false;
+    static final boolean DBG = false;
 
 
     private static final String[] ADDRESS_BOOK_COLUMN_NAMES = new String[] {
@@ -58,7 +57,7 @@ public class IccProvider extends ContentProvider {
     private static final String STR_EMAILS = "emails";
     private static final String STR_PIN2 = "pin2";
 
-    private static final UriMatcher URL_MATCHER =
+    static final UriMatcher URL_MATCHER =
                             new UriMatcher(UriMatcher.NO_MATCH);
 
     static {
@@ -424,8 +423,7 @@ public class IccProvider extends ContentProvider {
         }
     }
 
-    private void log(String msg) {
+    void log(String msg) {
         Log.d(TAG, "[IccProvider] " + msg);
     }
-
 }

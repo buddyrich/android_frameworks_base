@@ -16,6 +16,8 @@
 
 package com.android.server.pm;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.pm.ApplicationInfo;
 
 import java.util.HashSet;
@@ -41,10 +43,12 @@ class GrantedPermissions {
         }
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     void setFlags(int pkgFlags) {
         this.pkgFlags = pkgFlags
                 & (ApplicationInfo.FLAG_SYSTEM
                         | ApplicationInfo.FLAG_FORWARD_LOCK
-                        | ApplicationInfo.FLAG_EXTERNAL_STORAGE);
+                        | ApplicationInfo.FLAG_EXTERNAL_STORAGE
+                        | ApplicationInfo.FLAG_ACCESS_CONTROL_PASSWORD);
     }
 }

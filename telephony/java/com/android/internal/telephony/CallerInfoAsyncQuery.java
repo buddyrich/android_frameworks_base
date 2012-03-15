@@ -16,6 +16,8 @@
 
 package com.android.internal.telephony;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.AsyncQueryHandler;
 import android.content.Context;
 import android.database.Cursor;
@@ -198,6 +200,7 @@ public class CallerInfoAsyncQuery {
          * pool.
          */
         @Override
+        @MiuiHook(MiuiHookType.CHANGE_CODE)
         protected void onQueryComplete(int token, Object cookie, Cursor cursor) {
             if (DBG) Log.d(LOG_TAG, "##### onQueryComplete() #####   query complete for token: " + token);
 
@@ -246,6 +249,8 @@ public class CallerInfoAsyncQuery {
                         if (DBG) Log.d(LOG_TAG, "#####async contact look up with numeric username"
                                 + mCallerInfo);
                     }
+
+                    miui.telephony.CallerInfo.doSpNumberQuery(mQueryContext, cw.number, mCallerInfo);
 
                     // Final step: look up the geocoded description.
                     if (ENABLE_UNKNOWN_NUMBER_GEO_DESCRIPTION) {
@@ -325,6 +330,16 @@ public class CallerInfoAsyncQuery {
         return c;
     }
 
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    private static String getPhoneNumber(String number) {
+        miui.telephony.PhoneNumberUtils.PhoneNumber pn =
+            miui.telephony.PhoneNumberUtils.PhoneNumber.parse(number);
+        if (pn != null) {
+            return pn.getNumberWithoutPrefix(true);
+        }
+        return number;
+    }
+
     /**
      * Factory method to start the query based on a number.
      *
@@ -336,6 +351,7 @@ public class CallerInfoAsyncQuery {
      * PhoneUtils.startGetCallerInfo() decide which one to call based on
      * the phone type of the incoming connection.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public static CallerInfoAsyncQuery startQuery(int token, Context context, String number,
             OnQueryCompleteListener listener, Object cookie) {
         if (DBG) {
@@ -378,7 +394,8 @@ public class CallerInfoAsyncQuery {
 
         } else {
             // "number" is a regular phone number.  Use the PhoneLookup table:
-            contactRef = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number));
+            contactRef = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI,
+                    Uri.encode(getPhoneNumber(number)));
             selection = null;
             selectionArgs = null;
         }

@@ -16,6 +16,8 @@
 
 package android.app;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.Context;
 import android.content.Intent;
 import android.os.RemoteException;
@@ -82,6 +84,17 @@ public class AlarmManager
      */
     public static final int ELAPSED_REALTIME = 3;
 
+    /**
+     * @hide for libra only
+     * Normally, an alarm will be removed when its target package
+     * is removed or corresponding process is killed.
+     * When this flag is set, the alarm is never removed.
+     * For more detail, see AlarmManagerService.java about
+     * how UninstallReceiver.onReceive() removes alarm.
+     */
+    @MiuiHook(MiuiHookType.NEW_FIELD)
+    public static final int FLAG_KEEP_ALARM_WHEN_PACKAGE_RESTARTED = (1 << 30);
+
     private final IAlarmManager mService;
 
     /**
@@ -142,6 +155,17 @@ public class AlarmManager
     }
 
     /**
+     * @hide for libra only
+     */
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    public void setWithFlags(int type, long triggerAtTime, PendingIntent operation, int flags) {
+        try {
+            mService.setWithFlags(type, triggerAtTime, operation, flags);
+        } catch (RemoteException ex) {
+        }
+    }
+
+    /**
      * Schedule a repeating alarm.  <b>Note: for timing operations (ticks,
      * timeouts, etc) it is easier and much more efficient to use
      * {@link android.os.Handler}.</b>  If there is already an alarm scheduled
@@ -191,6 +215,18 @@ public class AlarmManager
             PendingIntent operation) {
         try {
             mService.setRepeating(type, triggerAtTime, interval, operation);
+        } catch (RemoteException ex) {
+        }
+    }
+
+    /**
+     * @hide for libra only
+     */
+    @MiuiHook(MiuiHookType.NEW_METHOD)
+    public void setRepeatingWithFlags(int type, long triggerAtTime, long interval,
+            PendingIntent operation, int flags) {
+        try {
+            mService.setRepeatingWithFlags(type, triggerAtTime, interval, operation, flags);
         } catch (RemoteException ex) {
         }
     }

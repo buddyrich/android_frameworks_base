@@ -16,6 +16,8 @@
 
 package android.app;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -721,8 +723,10 @@ public class DownloadManager {
 
         private long[] mIds = null;
         private Integer mStatusFlags = null;
-        private String mOrderByColumn = Downloads.Impl.COLUMN_LAST_MODIFICATION;
-        private int mOrderDirection = ORDER_DESCENDING;
+        @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+        String mOrderByColumn = Downloads.Impl.COLUMN_LAST_MODIFICATION;
+        @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+        int mOrderDirection = ORDER_DESCENDING;
         private boolean mOnlyIncludeVisibleInDownloadsUi = false;
 
         /**
@@ -788,6 +792,7 @@ public class DownloadManager {
          * @param projection the projection to pass to ContentResolver.query()
          * @return the Cursor returned by ContentResolver.query()
          */
+        @MiuiHook(MiuiHookType.CHANGE_CODE)
         Cursor runQuery(ContentResolver resolver, String[] projection, Uri baseUri) {
             Uri uri = baseUri;
             List<String> selectionParts = new ArrayList<String>();
@@ -819,12 +824,14 @@ public class DownloadManager {
                     parts.add("(" + statusClause(">=", 400)
                               + " AND " + statusClause("<", 600) + ")");
                 }
-                selectionParts.add(joinStrings(" OR ", parts));
+                selectionParts.add("(" + joinStrings(" OR ", parts) + ")");
             }
 
             if (mOnlyIncludeVisibleInDownloadsUi) {
                 selectionParts.add(Downloads.Impl.COLUMN_IS_VISIBLE_IN_DOWNLOADS_UI + " != '0'");
             }
+
+            addExtraSelectionParts(selectionParts);
 
             // only return rows which are not marked 'deleted = 1'
             selectionParts.add(Downloads.Impl.COLUMN_DELETED + " != '1'");
@@ -834,6 +841,13 @@ public class DownloadManager {
             String orderBy = mOrderByColumn + " " + orderDirection;
 
             return resolver.query(uri, projection, selection, selectionArgs, orderBy);
+        }
+
+        /**
+         * Add extra selection parts for query.
+         */
+        @MiuiHook(MiuiHookType.NEW_METHOD)
+        void addExtraSelectionParts(List<String> selectionParts) {
         }
 
         private String joinStrings(String joiner, Iterable<String> parts) {
@@ -856,7 +870,8 @@ public class DownloadManager {
 
     private ContentResolver mResolver;
     private String mPackageName;
-    private Uri mBaseUri = Downloads.Impl.CONTENT_URI;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    Uri mBaseUri = Downloads.Impl.CONTENT_URI;
 
     /**
      * @hide
@@ -1210,7 +1225,8 @@ public class DownloadManager {
      * Some columns correspond directly to underlying values while others are computed from
      * underlying data.
      */
-    private static class CursorTranslator extends CursorWrapper {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    static class CursorTranslator extends CursorWrapper {
         private Uri mBaseUri;
 
         public CursorTranslator(Cursor cursor, Uri baseUri) {
@@ -1240,10 +1256,12 @@ public class DownloadManager {
                     super.getString(columnIndex);
         }
 
+        @MiuiHook(MiuiHookType.CHANGE_CODE)
         private String getLocalUri() {
             long destinationType = getLong(getColumnIndex(Downloads.Impl.COLUMN_DESTINATION));
-            if (destinationType == Downloads.Impl.DESTINATION_FILE_URI ||
-                    destinationType == Downloads.Impl.DESTINATION_EXTERNAL ||
+            if (destinationType == Downloads.Impl.DESTINATION_FILE_URI ) {
+                return getString(getColumnIndex(Downloads.Impl.COLUMN_FILE_NAME_HINT));
+            } else if ( destinationType == Downloads.Impl.DESTINATION_EXTERNAL ||
                     destinationType == Downloads.Impl.DESTINATION_NON_DOWNLOADMANAGER_DOWNLOAD) {
                 String localPath = getString(getColumnIndex(COLUMN_LOCAL_FILENAME));
                 if (localPath == null) {
@@ -1270,7 +1288,8 @@ public class DownloadManager {
             }
         }
 
-        private long getPausedReason(int status) {
+        @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+        long getPausedReason(int status) {
             switch (status) {
                 case Downloads.Impl.STATUS_WAITING_TO_RETRY:
                     return PAUSED_WAITING_TO_RETRY;

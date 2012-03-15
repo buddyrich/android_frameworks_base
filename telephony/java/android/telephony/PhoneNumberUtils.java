@@ -21,6 +21,8 @@ import com.android.i18n.phonenumbers.PhoneNumberUtil;
 import com.android.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat;
 import com.android.i18n.phonenumbers.Phonenumber.PhoneNumber;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -1443,8 +1445,10 @@ public class PhoneNumberUtils
      *
      * @hide
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public static String formatNumber(
             String phoneNumber, String phoneNumberE164, String defaultCountryIso) {
+        phoneNumber = miui.telephony.PhoneNumberUtils.removeDashesAndBlanks(phoneNumber);
         int len = phoneNumber.length();
         for (int i = 0; i < len; i++) {
             if (!isDialable(phoneNumber.charAt(i))) {
@@ -1520,6 +1524,7 @@ public class PhoneNumberUtils
      * @return true if the number is in the list of emergency numbers
      *         listed in the RIL / SIM, otherwise return false.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public static boolean isEmergencyNumber(String number) {
         // Return true only if the specified number *exactly* matches
         // one of the emergency numbers listed by the RIL / SIM.
@@ -1589,6 +1594,8 @@ public class PhoneNumberUtils
         // Strip the separators from the number before comparing it
         // to the list.
         number = extractNetworkPortionAlt(number);
+
+        number = miui.telephony.PhoneNumberUtils.parseNumber(number); // MIUIHOOK
 
         // retrieve the list of emergency numbers
         // check read-write ecclist property first

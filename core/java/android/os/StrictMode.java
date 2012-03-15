@@ -111,8 +111,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class StrictMode {
     private static final String TAG = "StrictMode";
     private static final boolean LOG_V = Log.isLoggable(TAG, Log.VERBOSE);
-
-    private static final boolean IS_USER_BUILD = "user".equals(Build.TYPE);
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
+    private static final boolean IS_USER_BUILD = "user".equals(Build.TYPE) || "userdebug".equals(Build.TYPE);
     private static final boolean IS_ENG_BUILD = "eng".equals(Build.TYPE);
 
     /**

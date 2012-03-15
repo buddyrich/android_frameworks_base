@@ -22,6 +22,8 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.TimeInterpolator;
 import android.animation.ValueAnimator;
 import android.animation.ValueAnimator.AnimatorUpdateListener;
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -81,55 +83,79 @@ public class MultiWaveView extends View {
     private static final float TAP_RADIUS_SCALE_ACCESSIBILITY_ENABLED = 1.3f;
     private TimeInterpolator mChevronAnimationInterpolator = Ease.Quad.easeOut;
 
-    private ArrayList<TargetDrawable> mTargetDrawables = new ArrayList<TargetDrawable>();
-    private ArrayList<TargetDrawable> mChevronDrawables = new ArrayList<TargetDrawable>();
-    private ArrayList<Tweener> mChevronAnimations = new ArrayList<Tweener>();
-    private ArrayList<Tweener> mTargetAnimations = new ArrayList<Tweener>();
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    ArrayList<TargetDrawable> mTargetDrawables = new ArrayList<TargetDrawable>();
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    ArrayList<TargetDrawable> mChevronDrawables = new ArrayList<TargetDrawable>();
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    ArrayList<Tweener> mChevronAnimations = new ArrayList<Tweener>();
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    ArrayList<Tweener> mTargetAnimations = new ArrayList<Tweener>();
     private ArrayList<String> mTargetDescriptions;
     private ArrayList<String> mDirectionDescriptions;
-    private Tweener mHandleAnimation;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    Tweener mHandleAnimation;
     private OnTriggerListener mOnTriggerListener;
-    private TargetDrawable mHandleDrawable;
-    private TargetDrawable mOuterRing;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    TargetDrawable mHandleDrawable;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    TargetDrawable mOuterRing;
     private Vibrator mVibrator;
 
-    private int mFeedbackCount = 3;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    int mFeedbackCount = 3;
     private int mVibrationDuration = 0;
     private int mGrabbedState;
-    private int mActiveTarget = -1;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    int mActiveTarget = -1;
     private float mTapRadius;
-    private float mWaveCenterX;
-    private float mWaveCenterY;
-    private float mVerticalOffset;
-    private float mHorizontalOffset;
-    private float mOuterRadius = 0.0f;
-    private float mHitRadius = 0.0f;
-    private float mSnapMargin = 0.0f;
-    private boolean mDragging;
-    private int mNewTargetResources;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    float mWaveCenterX;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    float mWaveCenterY;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    float mVerticalOffset;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    float mHorizontalOffset;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    float mOuterRadius = 0.0f;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    float mHitRadius = 0.0f;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    float mSnapMargin = 0.0f;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    boolean mDragging;
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    int mNewTargetResources;
 
-    private AnimatorListener mResetListener = new AnimatorListenerAdapter() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    AnimatorListener mResetListener = new AnimatorListenerAdapter() {
         public void onAnimationEnd(Animator animator) {
             switchToState(STATE_IDLE, mWaveCenterX, mWaveCenterY);
         }
     };
 
-    private AnimatorListener mResetListenerWithPing = new AnimatorListenerAdapter() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    AnimatorListener mResetListenerWithPing = new AnimatorListenerAdapter() {
         public void onAnimationEnd(Animator animator) {
             ping();
             switchToState(STATE_IDLE, mWaveCenterX, mWaveCenterY);
         }
     };
 
-    private AnimatorUpdateListener mUpdateListener = new AnimatorUpdateListener() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    AnimatorUpdateListener mUpdateListener = new AnimatorUpdateListener() {
         public void onAnimationUpdate(ValueAnimator animation) {
             invalidateGlobalRegion(mHandleDrawable);
             invalidate();
         }
     };
 
-    private boolean mAnimatingTargets;
-    private AnimatorListener mTargetUpdateListener = new AnimatorListenerAdapter() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    boolean mAnimatingTargets;
+
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    AnimatorListener mTargetUpdateListener = new AnimatorListenerAdapter() {
         public void onAnimationEnd(Animator animator) {
             if (mNewTargetResources != 0) {
                 internalSetTargetResources(mNewTargetResources);
@@ -267,7 +293,8 @@ public class MultiWaveView extends View {
         setMeasuredDimension(viewWidth, viewHeight);
     }
 
-    private void switchToState(int state, float x, float y) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void switchToState(int state, float x, float y) {
         switch (state) {
             case STATE_IDLE:
                 deactivateTargets();
@@ -302,7 +329,8 @@ public class MultiWaveView extends View {
      * Assumes mChevronDrawables is an a list with an even number of chevrons filled with
      * mFeedbackCount items in the order: left, right, top, bottom.
      */
-    private void startChevronAnimation() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void startChevronAnimation() {
         final float r = mHandleDrawable.getWidth() * 0.4f;
         final float chevronAnimationDistance = mOuterRadius * 0.9f;
         final float from[][] = {
@@ -339,27 +367,31 @@ public class MultiWaveView extends View {
         }
     }
 
-    private void stopChevronAnimation() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void stopChevronAnimation() {
         for (Tweener anim : mChevronAnimations) {
             anim.animator.end();
         }
         mChevronAnimations.clear();
     }
 
-    private void stopHandleAnimation() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void stopHandleAnimation() {
         if (mHandleAnimation != null) {
             mHandleAnimation.animator.end();
             mHandleAnimation = null;
         }
     }
 
-    private void deactivateTargets() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void deactivateTargets() {
         for (TargetDrawable target : mTargetDrawables) {
             target.setState(TargetDrawable.STATE_INACTIVE);
         }
         mActiveTarget = -1;
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
     void invalidateGlobalRegion(TargetDrawable drawable) {
         int width = drawable.getWidth();
         int height = drawable.getHeight();
@@ -380,21 +412,24 @@ public class MultiWaveView extends View {
      * Dispatches a trigger event to listener. Ignored if a listener is not set.
      * @param whichHandle the handle that triggered the event.
      */
-    private void dispatchTriggerEvent(int whichHandle) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void dispatchTriggerEvent(int whichHandle) {
         vibrate();
         if (mOnTriggerListener != null) {
             mOnTriggerListener.onTrigger(this, whichHandle);
         }
     }
 
-    private void dispatchGrabbedEvent(int whichHandler) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void dispatchGrabbedEvent(int whichHandler) {
         vibrate();
         if (mOnTriggerListener != null) {
             mOnTriggerListener.onGrabbed(this, whichHandler);
         }
     }
 
-    private void doFinish() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void doFinish() {
         final int activeTarget = mActiveTarget;
         boolean targetHit =  activeTarget != -1;
 
@@ -443,7 +478,8 @@ public class MultiWaveView extends View {
         mOuterRing.setAlpha(0.0f);
     }
 
-    private void hideTargets(boolean animate) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void hideTargets(boolean animate) {
         if (mTargetAnimations.size() > 0) {
             stopTargetAnimation();
         }
@@ -473,7 +509,8 @@ public class MultiWaveView extends View {
         }
     }
 
-    private void showTargets(boolean animate) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void showTargets(boolean animate) {
         if (mTargetAnimations.size() > 0) {
             stopTargetAnimation();
         }
@@ -500,7 +537,8 @@ public class MultiWaveView extends View {
         }
     }
 
-    private void stopTargetAnimation() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void stopTargetAnimation() {
         for (Tweener anim : mTargetAnimations) {
             anim.animator.end();
         }
@@ -513,7 +551,8 @@ public class MultiWaveView extends View {
         }
     }
 
-    private void internalSetTargetResources(int resourceId) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void internalSetTargetResources(int resourceId) {
         Resources res = getContext().getResources();
         TypedArray array = res.obtainTypedArray(resourceId);
         int count = array.length();
@@ -660,7 +699,8 @@ public class MultiWaveView extends View {
         return handled ? true : super.onTouchEvent(event);
     }
 
-    private void moveHandleTo(float x, float y, boolean animate) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void moveHandleTo(float x, float y, boolean animate) {
         // TODO: animate the handle based on the current state/position
         mHandleDrawable.setX(x);
         mHandleDrawable.setY(y);
@@ -679,7 +719,8 @@ public class MultiWaveView extends View {
         switchToState(STATE_FINISH, event.getX(), event.getY());
     }
 
-    private void handleMove(MotionEvent event) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void handleMove(MotionEvent event) {
         if (!mDragging) {
             trySwitchToFirstTouchState(event);
             return;
@@ -779,7 +820,8 @@ public class MultiWaveView extends View {
      * Sets the current grabbed state, and dispatches a grabbed state change
      * event to our listener.
      */
-    private void setGrabbedState(int newState) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void setGrabbedState(int newState) {
         if (newState != mGrabbedState) {
             if (newState != OnTriggerListener.NO_HANDLE) {
                 vibrate();
@@ -791,7 +833,8 @@ public class MultiWaveView extends View {
         }
     }
 
-    private boolean trySwitchToFirstTouchState(MotionEvent event) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    boolean trySwitchToFirstTouchState(MotionEvent event) {
         final float x = event.getX();
         final float y = event.getY();
         final float dx = x - mWaveCenterX;
@@ -889,7 +932,8 @@ public class MultiWaveView extends View {
         return d * d;
     }
 
-    private float dist2(float dx, float dy) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    float dist2(float dx, float dy) {
         return dx*dx + dy*dy;
     }
 
@@ -903,7 +947,8 @@ public class MultiWaveView extends View {
         return square(scaledTapRadius);
     }
 
-    private void announceTargets() {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void announceTargets() {
         StringBuilder utterance = new StringBuilder();
         final int targetCount = mTargetDrawables.size();
         for (int i = 0; i < targetCount; i++) {
@@ -920,13 +965,15 @@ public class MultiWaveView extends View {
         }
     }
 
-    private void announceText(String text) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    void announceText(String text) {
         setContentDescription(text);
         sendAccessibilityEvent(AccessibilityEvent.TYPE_VIEW_FOCUSED);
         setContentDescription(null);
     }
 
-    private String getTargetDescription(int index) {
+    @MiuiHook(MiuiHookType.CHANGE_ACCESS)
+    String getTargetDescription(int index) {
         if (mTargetDescriptions == null || mTargetDescriptions.isEmpty()) {
             mTargetDescriptions = loadDescriptions(mTargetDescriptionsResourceId);
             if (mTargetDrawables.size() != mTargetDescriptions.size()) {

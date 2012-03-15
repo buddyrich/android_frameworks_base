@@ -23,6 +23,7 @@ import android.content.Context;
 import android.os.AsyncResult;
 import android.os.Message;
 import android.os.SystemProperties;
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.internal.telephony.AdnRecord;
@@ -170,14 +171,14 @@ public class SIMRecords extends IccRecords {
     };
 
     // ***** Constructor
-
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     public SIMRecords(PhoneBase p) {
         super(p);
 
         adnCache = new AdnRecordCache(phone);
 
         mVmConfig = new VoiceMailConstants();
-        mSpnOverride = new SpnOverride();
+        mSpnOverride = new MiuiSpnOverrideImpl();
 
         recordsRequested = false;  // No load request is made till SIM ready
 
@@ -1276,10 +1277,13 @@ public class SIMRecords extends IccRecords {
     }
 
     //***** Private methods
-
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     private void setSpnFromConfig(String carrier) {
         if (mSpnOverride.containsCarrier(carrier)) {
             spn = mSpnOverride.getSpn(carrier);
+            if (!android.text.TextUtils.isEmpty(spn)) {
+                spnDisplayCondition = 0;
+            }
         }
     }
 
@@ -1418,10 +1422,16 @@ public class SIMRecords extends IccRecords {
     /**
      * Checks if plmn is HPLMN or on the spdiNetworks list.
      */
+    @android.annotation.MiuiHook(android.annotation.MiuiHook.MiuiHookType.CHANGE_CODE)
     private boolean isOnMatchingPlmn(String plmn) {
         if (plmn == null) return false;
 
         if (plmn.equals(getOperatorNumeric())) {
+            return true;
+        }
+
+        if (MiuiSpnOverride.getInstance().getEquivalentOperatorNumeric(plmn)
+                .equals(MiuiSpnOverride.getInstance().getEquivalentOperatorNumeric(getOperatorNumeric()))) {
             return true;
         }
 

@@ -159,7 +159,9 @@ public class ParceledListSlice<T extends Parcelable> implements Parcelable {
 
                 return new ParceledListSlice(p, numItems, lastSlice);
             } else {
-                return new ParceledListSlice();
+                ParceledListSlice list = new ParceledListSlice();
+                list.setLastSlice(lastSlice);
+                return list;
             }
         }
 

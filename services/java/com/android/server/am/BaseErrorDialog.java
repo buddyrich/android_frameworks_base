@@ -18,6 +18,8 @@ package com.android.server.am;
 
 import com.android.internal.R;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Handler;
@@ -27,8 +29,9 @@ import android.view.WindowManager;
 import android.widget.Button;
 
 class BaseErrorDialog extends AlertDialog {
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public BaseErrorDialog(Context context) {
-        super(context, com.android.internal.R.style.Theme_Dialog_AppError);
+        super(context, com.miui.internal.R.style.Theme_Holo_Light_Dialog_Alert);
 
         getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,

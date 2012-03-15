@@ -16,6 +16,8 @@
 
 package android.content.pm;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -387,6 +389,7 @@ public class PackageParser {
         return mParseError;
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public Package parsePackage(File sourceFile, String destCodePath,
             DisplayMetrics metrics, int flags) {
         mParseError = PackageManager.INSTALL_SUCCEEDED;
@@ -419,7 +422,7 @@ public class PackageParser {
             assmgr = new AssetManager();
             int cookie = assmgr.addAssetPath(mArchiveSourcePath);
             if (cookie != 0) {
-                res = new Resources(assmgr, metrics, null);
+                res = android.content.res.MiuiClassFactory.newResources(assmgr, metrics, null); // MIUIHOOK
                 assmgr.setConfiguration(0, 0, null, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                         Build.VERSION.RESOURCES_SDK_INT);
                 parser = assmgr.openXmlResourceParser(cookie, ANDROID_MANIFEST_FILENAME);
@@ -700,6 +703,7 @@ public class PackageParser {
                 ? null : "must have at least one '.' separator";
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private static String parsePackageName(XmlPullParser parser,
             AttributeSet attrs, int flags, String[] outError)
             throws IOException, XmlPullParserException {
@@ -726,7 +730,7 @@ public class PackageParser {
             return null;
         }
         String nameError = validateName(pkgName, true);
-        if (nameError != null && !"android".equals(pkgName)) {
+        if (nameError != null && !"android".equals(pkgName) && !"miui".equals(pkgName)) { // MIUIHOOK
             outError[0] = "<manifest> specifies bad package name \""
                 + pkgName + "\": " + nameError;
             return null;
@@ -735,6 +739,7 @@ public class PackageParser {
         return pkgName.intern();
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private static PackageLite parsePackageLite(Resources res, XmlPullParser parser,
             AttributeSet attrs, int flags, String[] outError) throws IOException,
             XmlPullParserException {
@@ -761,7 +766,7 @@ public class PackageParser {
             return null;
         }
         String nameError = validateName(pkgName, true);
-        if (nameError != null && !"android".equals(pkgName)) {
+        if (nameError != null && !"android".equals(pkgName) && !"miui".equals(pkgName)) { // MIUIHOOK
             outError[0] = "<manifest> specifies bad package name \""
                 + pkgName + "\": " + nameError;
             return null;
@@ -809,6 +814,7 @@ public class PackageParser {
         return new Signature(sig);
     }
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private Package parsePackage(
         Resources res, XmlResourceParser parser, int flags, String[] outError)
         throws XmlPullParserException, IOException {
@@ -850,7 +856,7 @@ public class PackageParser {
                 com.android.internal.R.styleable.AndroidManifest_sharedUserId, 0);
         if (str != null && str.length() > 0) {
             String nameError = validateName(str, true);
-            if (nameError != null && !"android".equals(pkgName)) {
+            if (nameError != null && !"android".equals(pkgName) && !"miui".equals(pkgName)) { // MIUIHOOK
                 outError[0] = "<manifest> specifies bad sharedUserId name \""
                     + str + "\": " + nameError;
                 mParseError = PackageManager.INSTALL_PARSE_FAILED_BAD_SHARED_USER_ID;

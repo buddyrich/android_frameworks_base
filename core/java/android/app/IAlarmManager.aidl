@@ -25,7 +25,9 @@ import android.app.PendingIntent;
  */
 interface IAlarmManager {
     void set(int type, long triggerAtTime, in PendingIntent operation);
+    void setWithFlags(int type, long triggerAtTime, in PendingIntent operation, int flags);
     void setRepeating(int type, long triggerAtTime, long interval, in PendingIntent operation);
+    void setRepeatingWithFlags(int type, long triggerAtTime, long interval, in PendingIntent operation, int flags);
     void setInexactRepeating(int type, long triggerAtTime, long interval, in PendingIntent operation);
     void setTime(long millis);
     void setTimeZone(String zone);

@@ -23,6 +23,8 @@ import static android.net.ConnectivityManager.isNetworkTypeValid;
 import static android.net.NetworkPolicyManager.RULE_ALLOW_ALL;
 import static android.net.NetworkPolicyManager.RULE_REJECT_METERED;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.bluetooth.BluetoothTetheringDataTracker;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -82,6 +84,10 @@ import com.android.server.connectivity.Tethering;
 import com.android.server.connectivity.Vpn;
 import com.google.android.collect.Lists;
 import com.google.android.collect.Sets;
+import com.miui.server.FirewallService;
+
+import miui.net.FirewallManager;
+
 import dalvik.system.DexClassLoader;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -325,9 +331,13 @@ public class ConnectivityService extends IConnectivityManager.Stub {
     // the set of network types that can only be enabled by system/sig apps
     List mProtectedNetworks;
 
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public ConnectivityService(Context context, INetworkManagementService netd,
             INetworkStatsService statsService, INetworkPolicyManager policyManager) {
         if (DBG) log("ConnectivityService starting up");
+
+        // initialize data connection firewall.
+        FirewallService.setupService(context);
 
         HandlerThread handlerThread = new HandlerThread("ConnectivityServiceThread");
         handlerThread.start();
@@ -553,6 +563,8 @@ private NetworkStateTracker makeWimaxStateTracker() {
         Class wimaxStateTrackerClass = null;
         Class wimaxServiceClass = null;
         Class wimaxManagerClass;
+        String wimaxJarLocation;
+        String wimaxLibLocation;
         String wimaxManagerClassName;
         String wimaxServiceClassName;
         String wimaxStateTrackerClassName;
@@ -564,6 +576,10 @@ private NetworkStateTracker makeWimaxStateTracker() {
 
         if (isWimaxEnabled) {
             try {
+                wimaxJarLocation = mContext.getResources().getString(
+                        com.android.internal.R.string.config_wimaxServiceJarLocation);
+                wimaxLibLocation = mContext.getResources().getString(
+                        com.android.internal.R.string.config_wimaxNativeLibLocation);
                 wimaxManagerClassName = mContext.getResources().getString(
                         com.android.internal.R.string.config_wimaxManagerClassname);
                 wimaxServiceClassName = mContext.getResources().getString(
@@ -571,7 +587,10 @@ private NetworkStateTracker makeWimaxStateTracker() {
                 wimaxStateTrackerClassName = mContext.getResources().getString(
                         com.android.internal.R.string.config_wimaxStateTrackerClassname);
 
-                wimaxClassLoader = WimaxHelper.getWimaxClassLoader(mContext);
+                log("wimaxJarLocation: " + wimaxJarLocation);
+                wimaxClassLoader =  new DexClassLoader(wimaxJarLocation,
+                        new ContextWrapper(mContext).getCacheDir().getAbsolutePath(),
+                        wimaxLibLocation, ClassLoader.getSystemClassLoader());
 
                 try {
                     wimaxManagerClass = wimaxClassLoader.loadClass(wimaxManagerClassName);
@@ -957,6 +976,7 @@ private NetworkStateTracker makeWimaxStateTracker() {
     }
 
     // javadoc from interface
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public int startUsingNetworkFeature(int networkType, String feature,
             IBinder binder) {
         if (VDBG) {
@@ -1015,6 +1035,8 @@ private NetworkStateTracker makeWimaxStateTracker() {
                     }
                 }
 
+                FirewallManager.getInstance().onStartUsingNetworkFeature(getCallingUid(), getCallingPid(), usedNetworkType);
+
                 if (restoreTimer >= 0) {
                     mHandler.sendMessageDelayed(
                             mHandler.obtainMessage(EVENT_RESTORE_DEFAULT_NETWORK, f), restoreTimer);
@@ -1056,6 +1078,7 @@ private NetworkStateTracker makeWimaxStateTracker() {
     }
 
     // javadoc from interface
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public int stopUsingNetworkFeature(int networkType, String feature) {
         enforceChangePermission();
 
@@ -1136,6 +1159,8 @@ private NetworkStateTracker makeWimaxStateTracker() {
 
             // TODO - move to individual network trackers
             int usedNetworkType = convertFeatureToNetworkType(networkType, feature);
+
+            FirewallManager.getInstance().onStopUsingNetworkFeature(uid, pid, usedNetworkType);
 
             tracker =  mNetTrackers[usedNetworkType];
             if (tracker == null) {

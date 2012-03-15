@@ -16,6 +16,8 @@
 
 package com.android.internal.telephony;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.ContentResolver;
 import android.provider.Settings;
 import android.util.Log;
@@ -74,7 +76,15 @@ public class SmsUsageMonitor {
      * @return true if application is allowed to send the requested number
      *  of new sms messages
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public boolean check(String appName, int smsWaiting) {
+        /** HACKME: skip check for our own system sms app, we should use more stric security check
+         *  instead of appName check
+         * */
+        if ("com.android.mms".equals(appName)) {
+            return true;
+        }
+
         synchronized (mSmsStamp) {
             removeExpiredTimestamps();
 

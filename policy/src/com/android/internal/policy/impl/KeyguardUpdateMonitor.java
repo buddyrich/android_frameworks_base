@@ -16,6 +16,8 @@
 
 package com.android.internal.policy.impl;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -109,11 +111,25 @@ public class KeyguardUpdateMonitor {
      * we need a single object to pass to the handler.  This class helps decode
      * the intent and provide a {@link SimCard.State} result.
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private static class SimArgs {
         public final IccCard.State simState;
 
         SimArgs(IccCard.State state) {
             simState = state;
+        }
+
+        @MiuiHook(MiuiHookType.NEW_METHOD)
+        private static IccCard.State getIccCardState(String stateExtra){
+            IccCard.State state;
+            if (IccCard.INTENT_VALUE_ICC_IMSI.equals(stateExtra)) {
+                state = IccCard.State.READY;
+            } else if (IccCard.INTENT_VALUE_ICC_LOADED.equals(stateExtra)) {
+                state = IccCard.State.READY;
+            } else {
+                state = IccCard.State.UNKNOWN;
+            }
+            return state;
         }
 
         static SimArgs fromIntent(Intent intent) {
@@ -147,7 +163,7 @@ public class KeyguardUpdateMonitor {
             } else if (IccCard.INTENT_VALUE_LOCKED_NETWORK.equals(stateExtra)) {
                 state = IccCard.State.NETWORK_LOCKED;
             } else {
-                state = IccCard.State.UNKNOWN;
+                state = getIccCardState(stateExtra);
             }
             return new SimArgs(state);
         }

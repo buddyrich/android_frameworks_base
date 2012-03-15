@@ -16,6 +16,8 @@
 
 package android.content.res;
 
+import android.annotation.MiuiHook;
+import android.annotation.MiuiHook.MiuiHookType;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.util.TypedValue;
@@ -84,6 +86,7 @@ public final class AssetManager {
      * use by applications.
      * {@hide}
      */
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     public AssetManager() {
         synchronized (this) {
             if (DEBUG_REFS) {
@@ -93,6 +96,7 @@ public final class AssetManager {
             init();
             if (localLOGV) Log.v(TAG, "New asset manager: " + this);
             ensureSystemAssets();
+            android.app.MiuiThemeHelper.addExtraAssetPaths(this); // MIUIHOOK
         }
     }
 
@@ -106,6 +110,7 @@ public final class AssetManager {
         }
     }
     
+    @MiuiHook(MiuiHookType.CHANGE_CODE)
     private AssetManager(boolean isSystem) {
         if (DEBUG_REFS) {
             synchronized (this) {
@@ -115,6 +120,7 @@ public final class AssetManager {
         }
         init();
         if (localLOGV) Log.v(TAG, "New asset manager: " + this);
+        android.app.MiuiThemeHelper.addExtraAssetPaths(this); // MIUIHOOK
     }
 
     /**
