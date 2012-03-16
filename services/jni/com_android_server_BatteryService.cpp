@@ -180,22 +180,17 @@ static void setIntField(JNIEnv* env, jobject obj, const char* path, jfieldID fie
     env->SetIntField(obj, fieldID, value);
 }
 
-static void setPercentageField(JNIEnv* env, jobject obj, const char* path, jfieldID fieldID)
+// FIXME-HASH: Check for a max value (used in mBatteryLevel)
+static void setIntFieldMax(JNIEnv* env, jobject obj, const char* path, jfieldID fieldID, int maxValue)
 {
     const int SIZE = 128;
     char buf[SIZE];
-
+    
     jint value = 0;
     if (readFromFile(path, buf, SIZE) > 0) {
         value = atoi(buf);
     }
-    /* sanity check for buggy drivers that provide bogus values, e.g. 103% */
-    if (value < 0) {
-        value = 0;
-    } else if (value > 100) {
-        value = 100;
-    }
-
+    if (value > maxValue) value = maxValue;
     env->SetIntField(obj, fieldID, value);
 }
 
@@ -219,7 +214,7 @@ static void android_server_BatteryService_update(JNIEnv* env, jobject obj)
     setBooleanField(env, obj, gPaths.usbOnlinePath, gFieldIds.mUsbOnline);
     setBooleanField(env, obj, gPaths.batteryPresentPath, gFieldIds.mBatteryPresent);
     
-    setPercentageField(env, obj, gPaths.batteryCapacityPath, gFieldIds.mBatteryLevel);
+    setIntFieldMax(env, obj, gPaths.batteryCapacityPath, gFieldIds.mBatteryLevel, 100);
     setVoltageField(env, obj, gPaths.batteryVoltagePath, gFieldIds.mBatteryVoltage);
     setIntField(env, obj, gPaths.batteryTemperaturePath, gFieldIds.mBatteryTemperature);
     
@@ -290,7 +285,9 @@ int register_android_server_BatteryService(JNIEnv* env)
                 snprintf(path, sizeof(path), "%s/%s/present", POWER_SUPPLY_PATH, name);
                 if (access(path, R_OK) == 0)
                     gPaths.batteryPresentPath = strdup(path);
-                snprintf(path, sizeof(path), "%s/%s/capacity", POWER_SUPPLY_PATH, name);
+                // 1% battery mod
+                snprintf(path, sizeof(path), "%s/%s/charge_counter", POWER_SUPPLY_PATH, name);
+                //snprintf(path, sizeof(path), "%s/%s/capacity", POWER_SUPPLY_PATH, name);
                 if (access(path, R_OK) == 0)
                     gPaths.batteryCapacityPath = strdup(path);
 
@@ -415,3 +412,4 @@ int register_android_server_BatteryService(JNIEnv* env)
 }
 
 } /* namespace android */
+
