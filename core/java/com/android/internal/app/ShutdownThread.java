@@ -281,6 +281,14 @@ public final class ShutdownThread extends Thread {
     public void run() {
         boolean bluetoothOff;
         boolean radioOff;
+	
+	// try an immediate shutdown if we chose to reboot into recovery, 
+	// avoids the issue of not being able to remount /systemorig
+	if(mReboot){
+		if(mRebootReason.equals("recovery")) {
+			rebootOrShutdown(mReboot, mRebootReason);
+		}
+	}
 
         BroadcastReceiver br = new BroadcastReceiver() {
             @Override public void onReceive(Context context, Intent intent) {
@@ -296,6 +304,7 @@ public final class ShutdownThread extends Thread {
          */
         {
             String reason = (mReboot ? "1" : "0") + (mRebootReason != null ? mRebootReason : "");
+	    
             SystemProperties.set(SHUTDOWN_ACTION_PROPERTY, reason);
         }
 
@@ -393,7 +402,6 @@ public final class ShutdownThread extends Thread {
             }
             SystemClock.sleep(PHONE_STATE_POLL_SLEEP_MSEC);
         }
-
         // Shutdown MountService to ensure media is in a safe state
         IMountShutdownObserver observer = new IMountShutdownObserver.Stub() {
             public void onShutDownComplete(int statusCode) throws RemoteException {
@@ -429,6 +437,15 @@ public final class ShutdownThread extends Thread {
             }
         }
 
+	// Catch any reboot requests with reasons other than
+	// "recovery", namely "bp-tools" -> Stock Recovery and
+	// "bootloader" -> Fastboot
+	if(mReboot) {
+		if(!(mRebootReason.equals("recovery"))) {
+			rebootOrShutdown(mReboot, mRebootReason);
+		}
+	}
+
         rebootOrShutdown(mReboot, mRebootReason);
     }
 
@@ -442,11 +459,13 @@ public final class ShutdownThread extends Thread {
     public static void rebootOrShutdown(boolean reboot, String reason) {
         if (reboot) {
             Log.i(TAG, "Rebooting, reason: " + reason);
+	
             try {
                 Power.reboot(reason);
             } catch (Exception e) {
                 Log.e(TAG, "Reboot failed, will attempt shutdown instead", e);
-            }
+            }		
+
         } else if (SHUTDOWN_VIBRATE_MS > 0) {
             // vibrate before shutting down
             Vibrator vibrator = new Vibrator();
